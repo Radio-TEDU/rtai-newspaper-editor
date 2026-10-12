@@ -18,3 +18,4 @@ async function moduleUrl(name) {
 export const model = await import(await moduleUrl('model'));
 export const { validateProject } = await import(await moduleUrl('validation'));
 export const layout = await import(await moduleUrl('layout'));
+export const html = await import(await moduleUrl('html-document'));

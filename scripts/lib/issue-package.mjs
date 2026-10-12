@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { zipSync, unzipSync, strToU8, strFromU8 } from 'fflate';
-import { model, validateProject, layout } from './project-model.mjs';
+import { model, validateProject, layout, html } from './project-model.mjs';
 import { imageInfo } from './media.mjs';
 
 export const MAX = 100 * 1024 * 1024;
@@ -54,6 +54,17 @@ export function decode(bytes) {
     return { project, media };
 }
 export async function packageFile(file) { const stat = await fs.stat(file); if (stat.size > MAX) throw new Error('Paket en fazla 100 MB olabilir.'); return decode(new Uint8Array(await fs.readFile(file))); }
+export async function projectFile(file) {
+    if (!/\.html?$/i.test(file)) return packageFile(file);
+    if ((await fs.stat(file)).size > MAX) throw new Error('HTML en fazla 100 MB olabilir.');
+    const doc = html.extractEditableHtml(await fs.readFile(file, 'utf8')), media = new Map();
+    for (const a of doc.assets) { const bytes = new Uint8Array(Buffer.from(a.data, 'base64')); if (imageInfo(bytes).type !== a.type) throw new Error('HTML görsel MIME bilgisi geçersiz.'); media.set(a.id, bytes); }
+    return { project: doc.project, media };
+}
+export async function writeProject(file, project, media) {
+    const value = /\.html?$/i.test(file) ? html.buildEditableHtml(project, [...media].filter(([id]) => referencedAssets(project).includes(id)).map(([id, bytes]) => ({ id, type: imageInfo(bytes).type, data: Buffer.from(bytes).toString('base64') }))) : encode(project, media);
+    return writeNew(file, value);
+}
 export function layoutIssues(project) {
     const issues = [];
     for (const page of project.pages) {

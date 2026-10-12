@@ -49,12 +49,13 @@ export function snapElement(e: DesignElement, page: NewspaperPage, height: numbe
 
 export interface TextLine { text: string; x: number; y: number; width: number; last: boolean }
 export interface TextLayout { lines: TextLine[]; neededHeight: number; overflow: boolean; narrow: boolean }
-export function layoutText(e: DesignElement, text: string, images: DesignElement[], measure: (text: string) => number): TextLayout {
+export function createTextLayout(intersect: typeof intersects) {
+return function layoutText(e: DesignElement, text: string, images: DesignElement[], measure: (text: string) => number): TextLayout {
     const lines: TextLine[] = [];
     const lineHeight = e.fontSize * e.lineHeight;
     const inset = e.borderWidth;
     const width = Math.max(1, e.width - inset * 2);
-    const blockers = images.filter(b => !b.hidden && intersects(e, b));
+    const blockers = images.filter(b => !b.hidden && intersect(e, b));
     let y = 0, narrow = false;
     // Bound work for pathological input while retaining an explicit overflow state.
     const maxRows = 10000;
@@ -98,7 +99,9 @@ export function layoutText(e: DesignElement, text: string, images: DesignElement
     }
     const neededHeight = Math.ceil(y + inset * 2);
     return { lines, neededHeight, overflow: neededHeight > e.height + 1, narrow };
+};
 }
+export const layoutText = createTextLayout(intersects);
 let context: CanvasRenderingContext2D | null | undefined;
 export function measureTextFor(e: DesignElement) {
     if (typeof document === 'undefined') throw new Error('Metin ölçümü için tarayıcı gerekir.');

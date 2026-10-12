@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { encode, packageFile, jsonFile, readAsset, referencedAssets, compose, writeNew, layoutIssues } from './lib/issue-package.mjs';
+import { projectFile, writeProject, jsonFile, readAsset, referencedAssets, compose, writeNew, layoutIssues } from './lib/issue-package.mjs';
 import { validateProject } from './lib/project-model.mjs';
 import { demoImage } from './lib/media.mjs';
 
@@ -16,7 +16,7 @@ try {
     if (command === 'new') {
         const input = required('input'), result = await compose(await jsonFile(input), path.dirname(input));
         const issues = layoutIssues(result.project); if (issues.length) throw new Error(issues.join('\n'));
-        await writeNew(required('output'), encode(result.project, result.media));
+        await writeProject(required('output'), result.project, result.media);
         console.log(`Gazete oluşturuldu: ${result.project.pages.length} sayfa, ${result.project.articles.length} yazı. Görsel/metin kontrolü için editörde açın.`);
     } else if (command === 'pack') {
         const project = validateProject(await jsonFile(required('input'))), media = new Map();
@@ -27,9 +27,9 @@ try {
             media.set(id, (await readAsset(path.dirname(mappingFile), mapping[id])).bytes);
         }
         const issues = layoutIssues(project); if (issues.length) throw new Error(issues.join('\n'));
-        await writeNew(required('output'), encode(project, media)); console.log('Düzenlenebilir proje paketi oluşturuldu.');
+        await writeProject(required('output'), project, media); console.log('Düzenlenebilir gazete dosyası oluşturuldu.');
     } else if (command === 'unpack') {
-        const { project, media } = await packageFile(required('input')), directory = required('output');
+        const { project, media } = await projectFile(required('input')), directory = required('output');
         await fs.mkdir(directory); // Refuse existing directories: never overwrite hand edits.
         const mapping = {};
         for (const [id, bytes] of media) { mapping[id] = 'media/' + id + '.bin'; await writeNew(path.join(directory, mapping[id]), bytes); }
@@ -37,7 +37,7 @@ try {
         await writeNew(path.join(directory, 'assets.json'), JSON.stringify(mapping, null, 2));
         console.log('Paket açıldı. project.json kimliklerini ve değiştirmeyeceğiniz sayfaları koruyun.');
     } else if (command === 'check') {
-        const { project, media } = await packageFile(required('input')), issues = layoutIssues(project);
+        const { project, media } = await projectFile(required('input')), issues = layoutIssues(project);
         if (issues.length) throw new Error(issues.join('\n'));
         console.log(`Yapı ve medya başlıkları geçerli: ${project.pages.length} sayfa, ${project.articles.length} yazı, ${media.size} görsel. Metin taşması ve görselin tam çözümlenmesi tarayıcıda kontrol edilmelidir.`);
     } else if (command === 'demo') {
@@ -54,8 +54,10 @@ try {
             first.elements.push(model.makeElement('image', { assetId: asset, alt: 'Yeşil yapılar ve kırmızı daireden oluşan örnek görsel', name: 'Örnek görsel', x: first.margin, y: 710, width: 580, height: 280 }));
         }
         const issues = layoutIssues(result.project); if (issues.length) throw new Error(issues.join('\n'));
-        await writeNew(required('output'), encode(result.project, result.media)); console.log('İki sayfalık örnek gazete ve PNG görseli paketlendi.');
+        await writeProject(required('output'), result.project, result.media); console.log('İki sayfalık örnek gazete ve PNG görseli hazırlandı.');
+    } else if (command === 'html') {
+        const { project, media } = await projectFile(required('input')); await writeProject(required('output'), project, media); console.log('Gazete HTML olarak dışa aktarıldı.');
     } else if (!command || command === 'help') {
-        console.log('RTAI gazete aracı\nnew --input issue.json --output gazete.rtai.zip\npack --input project.json --assets assets.json --output gazete.rtai.zip\nunpack --input gazete.rtai.zip --output yeni-klasor\ncheck --input gazete.rtai.zip\ndemo --output ornek.rtai.zip\nÇıktı dosyaları/klasörleri mevcutsa işlem durur; üzerine yazılmaz.');
+        console.log('RTAI gazete aracı\nnew --input issue.json --output gazete.html\npack --input project.json --assets assets.json --output gazete.html\nunpack --input gazete.html --output yeni-klasor\ncheck --input gazete.html\ndemo --output ornek.html\nhtml --input gazete.rtai.zip --output gazete.html\n.rtai.zip çıktıları da desteklenir. Mevcut çıktının üzerine yazılmaz.');
     } else throw new Error('Bilinmeyen komut. help kullanın.');
 } catch (error) { console.error('Gazete aracı: ' + (error.code === 'EEXIST' ? 'Çıktı zaten var. Yeni bir dosya/klasör adı seçin; çalışma korunmuştur.' : error.message)); process.exitCode = 1; }
