@@ -2,6 +2,8 @@
 
 ## Yayınlanmamış · terminal üretimi ve düzenleme
 
+- Bağımsız GitHub deposu ve `main` dalı; klonlama/kurulum adımları ve Git dışındaki kullanıcı çalışmalarını paketle taşıma açıklaması.
+
 - Projeyle taşınan `rtai-newspaper` Codex skill'i; API bağlantısı olmadan içerikten düzenlenebilir gazete üretim akışı.
 - Terminalde `new`, `pack`, `unpack`, `check`, `demo`; mevcut çıktıyı koruma, ortak şema doğrulaması, medya sınırları ve dosya yolu kontrolü.
 - Kapak/haber/ajanda/fikir yerleşimleri, iki sayfalık özgün örnek içerik ve PNG; editöre aktarım ve elle düzenlenen sayıyı yeniden paketleme.

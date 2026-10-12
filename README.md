@@ -118,8 +118,19 @@ Dil için kod/alan adları İngilizcedir. Öğe etiketleri merkezî sözlükte b
 
 ## Referanslar ve Git çalışma düzeni
 
+GitHub deposu: [Radio-TEDU/rtai-newspaper-editor](https://github.com/Radio-TEDU/rtai-newspaper-editor).
+
+Başka bilgisayarda, depoya erişimi olan GitHub hesabınızla:
+
+~~~sh
+git clone https://github.com/Radio-TEDU/rtai-newspaper-editor.git
+cd rtai-newspaper-editor
+npm ci
+npm run dev
+~~~
+
 Klasördeki Weekly-TEDU-Yeni-Tasarim.html yalnızca tasarım ve baskı incelemesinde kullanıldı; içeriği, fontları, görselleri veya bütün HTML'i uygulamaya kopyalanmadı. İngilizce referans da korunur. Büyük yerel referanslar .gitignore ile uygulama deposundan ayrı tutulur.
 
 Proje bağımsız Git deposunda `main` dalıyla geliştirilir. Çalışan kilometre taşları küçük ve anlaşılır Conventional Commit mesajlarıyla kaydedilir (`feat:`, `fix:`, `docs:`). GitHub ve commit işlemleri kullanıcının talimatıyla yürütülür; yayına alma ayrı bir adımdır. CHANGELOG.md kısa ilerleme kaydıdır.
 
-`.local/` içindeki devam notları, gerçek haberler ve üretilen gazeteler; `artifacts/` test çıktıları; yerel referans HTML dosyaları; bağımlılıklar ve derleme çıktıları commit kapsamı dışındadır. Skill, uygulama kodu, örnek içerik ve kilit dosyası depoya dahildir. Başka bilgisayarda depoyu klonlayıp `npm ci` ve `npm run dev` ile başlayın.
+`.local/` içindeki devam notları, gerçek haberler ve üretilen gazeteler; `artifacts/` test çıktıları; yerel referans HTML dosyaları; bağımlılıklar ve derleme çıktıları commit kapsamı dışındadır. Skill, uygulama kodu, örnek içerik ve kilit dosyası depoya dahildir. Kaynak kodu klonlamak tarayıcıdaki taslağı veya Git dışında tutulan gazete paketlerini taşımaz; çalışmanızı **Paketi indir** ile alıp yeni bilgisayarda **Paket aç** ile yükleyin.
