@@ -1,0 +1,22 @@
+[hidden]{display:none!important}
+.editor-layout.panels-hidden{grid-template-columns:minmax(250px,1fr)}
+.workspace{display:block;position:relative}
+.canvas-stage{width:max-content;min-width:100%}
+.canvas-stage .paper-size{margin:0 auto}
+.canvas-label{width:auto;max-width:none}
+.pan-mode,.space-pan{cursor:grab;touch-action:none}
+.pan-mode .design-element,.space-pan .design-element{cursor:grab}
+.panning,.panning .design-element{cursor:grabbing}
+.pan-mode .paper,.space-pan .paper{pointer-events:none}
+.zoom-controls button[aria-pressed=true]{background:#dcebe3;border-color:#438f85}
+.smart-guide{position:absolute;pointer-events:none;z-index:2000;background:#ca3e79}
+.smart-guide.x{top:0;bottom:0;width:1px}
+.smart-guide.y{left:0;right:0;height:1px}
+.flow-text{position:relative}
+.flow-line{position:absolute;display:block;white-space:pre;overflow:hidden}
+.editable .design-element:has([data-overflow=true]){outline:2px dashed #b7462f}
+.editable .design-element:has([data-overflow=true])::after{content:'Metin taşıyor · kutuyu büyütün';position:absolute;left:0;bottom:-25px;background:#fff4df;color:#9b3d29;font:12px/20px Arial;padding:2px 7px;white-space:nowrap;pointer-events:none;z-index:2}
+.check-field{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.5;margin:12px 0}
+.check-field input{flex:none;margin-top:3px}
+@media(max-width:800px){.editor-layout.panels-hidden{display:flex}.header-actions button{padding:9px 6px;gap:5px}.header-actions button[aria-controls] span{display:none}.zoom-controls{gap:3px}.zoom-controls button{padding:7px}.canvas-footer>span{max-width:95px}.panels-hidden .canvas-region{height:calc(100dvh - 130px);min-height:550px}}
+@media print{.smart-guide{display:none!important}.flow-line{overflow:visible}}

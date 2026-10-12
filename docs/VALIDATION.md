@@ -1,0 +1,71 @@
+# İlk kilometre taşı doğrulaması
+
+11 Ekim 2026 çalışma kapsamı. Windows, Node.js 24.19, Vite 7.3.7, React 19.2 ve sistem Microsoft Edge üzerinde yürütüldü. Sunucu olarak üretim derlemesinin 127.0.0.1:4173 önizlemesi kullanıldı.
+
+## Çalıştırılan kontroller
+
+- npm run build: TypeScript ve üretim derlemesi başarılı.
+- npm test: 6/6 birim kontrolü başarılı.
+- Playwright: 5/5 tarayıcı senaryosu başarılı; son çalışma yaklaşık 18 saniye.
+
+Tarayıcı senaryoları: şablonda metin taşması olmaması; fareyle taşıma ve tutamaçla boyutlandırma; klavye konumu ve geri alma; kilitleme/çoğaltma/silme/geri alma; katmanlar; yeniden yükleyince kayıt; boş projede metin + bilgisayardan PNG; görsel altyazısı/alternatif metin; medya içeren paketin indirilip yeni projeye açılması; sayfa sırasının korunması; okuma ve hash ile haber ayrıntısı; doğrudan bağlantıda yeniden açılma ve Escape ile kapanma; küçük ekran genişliği; bozuk paketin mevcut çalışmayı koruması.
+
+Depolama hata senaryosunda IndexedDB medya yazısına QuotaExceededError enjekte edildi. Sayfa kaydı ve medya aynı işlem içinde iptal edildi; önceki yerel proje bozulmadı. Açık oturumdaki görsel medya içeren paket olarak kurtarılabildi. Bu senaryo gerçek disk doldurarak denenmedi.
+
+## PDF kanıtı
+
+artifacts/verified-a3.pdf: iki sayfa; MediaBox fiziksel ölçü kontrolü 297 × 420 mm. Sayfa sırası önce Test sayfası iki, sonra görselli Test sayfası bir olarak doğrulandı. Editör araçları baskıda yok.
+
+artifacts/verified-a4.pdf: tek sayfa; MediaBox fiziksel ölçü kontrolü 210 × 297 mm.
+
+artifacts/template-a3.pdf: özgün gazete şablonu, tek sayfa. Şablonun manşet ve yan kolon metnindeki başlangıç kesilmeleri düzeltildi.
+
+Bu üç gerçek PDF dosyası Windows.Data.Pdf ile tekrar açıldı, PNG'ye render edildi ve bütün sayfaları gözle incelendi. Yalnızca DOM ekran görüntüsüne dayanılmadı. Metinler, Türkçe karakterler, kâğıt rengi, çizgiler, görsel ve sıra görüntülerde kontrol edildi. Görüntüler artifacts/pdf-render, artifacts/pdf-a4 ve artifacts/pdf-template içindedir.
+
+Windows'ta yeniden rasterleştirmek için:
+
+~~~sh
+node scripts/render-pdf.mjs artifacts/verified-a3.pdf artifacts/pdf-render
+~~~
+
+Bu yardımcı Windows'un yerleşik PDF API'sini kullanır; sistem ayarını veya PowerShell yürütme politikasını değiştirmez. Diğer platformlarda PDF görüntüleyicisi veya Poppler kullanılabilir.
+
+## Görsel inceleme
+
+artifacts/editor-desktop.png ve artifacts/editor-mobile.png üretildi. Masaüstünde üç panel, sayfa/kolon ayarları ve gazete hiyerarşisi incelendi. 390 px görünümün belge genişliğinin ekranı aşmadığı testle doğrulandı. Dokunmatik donanım ve ekran okuyucu ile ayrıca test yapılmadı.
+
+## Kapsam sınırları
+
+- Yerel kayıt aynı tarayıcı profili ve aynı adres/porta bağlıdır. Tek sekmede çalışılmalıdır; sekmeler arasında çatışma çözümü yoktur.
+- Elle kullanılan Edge/Chrome yazdırma penceresindeki bütün ayar kombinasyonları denenmedi. Otomatik PDF Chromium baskı motorundan, CSS sayfa ölçüsü ve arka plan açık olarak alındı.
+- Firefox, Safari, fiziksel yazıcı, CMYK/PDF-X ve taşma payı doğrulaması yoktur.
+- İlk sürüm bağımsız paylaşılabilir HTML yayın dosyası üretmez. Okuma görünümü yerel proje içinde çalışır.
+- Kullanıcının sonradan kutuya sığmayacak metin yazması otomatik yeniden akışa yol açmaz; kutu/yazı boyutu elle düzenlenir.
+
+Türkçe referans HTML'in çalışma başı içeriği ile son içeriğinin SHA-256 özeti karşılaştırıldı: değişmedi. Başlangıç ve bitişte klasör Git deposu değildi. Commit, push veya uzak depo işlemi yapılmadı.
+
+## Terminal üretimi ve pazartesi işleri — sonraki kilometre taşı
+
+11 Ekim 2026, aynı Windows/Node/Edge ortamı. Yukarıdaki ilk kilometre taşı kaydı tarihsel olarak korundu.
+
+- TypeScript ve Vite üretim derlemesi başarılı; tarayıcı test sunucusu güncel derlemeyi hazırladı.
+- `npm test`: 10/10. Önceki 6 modele ek olarak güvenli yerleştirme, merkez yakalama, görselden kaçınan satırlar ve dar alan/taşma kontrolleri.
+- `npm run test:tool`: 5/5. Medyalı paket, eksik medya/yol kaçışı, mevcut çıktıyı koruma, bağımsız yazılar, CLI açma–elle değiştirme–yeniden paketleme; kimlikler ve dokunulmayan sayfa korunuyor.
+- `npm run test:e2e`: 11/11, son tam çalışma yaklaşık 58 saniye. Önceki senaryoların yanında terminal paketinin elle düzenlenmesi/yeniden açılması, zoom/pan/paneller, çakışmasız çoğaltma, taşan metinde PDF engeli, aç/kapatılabilir sarma/geri alma/yeniden yükleme, kaydedilmeyi beklemeyen bağlantısız taslak ve geçici hizalama çizgileri.
+- Son terminal örneğinde metin kutusu yüksekliği/yazı boyutu düzeltildi. `npm run test:e2e -- --grep 'terminal paketi'` 1/1 yeniden geçti; örneğin baskı görünümünde taşma olmadığı da senaryoya eklendi. Terminal araçlarının 5/5 kontrolleri yeniden geçti.
+- Repo skill'i, skill-creator'ın `quick_validate.py` aracıyla doğrulandı: `Skill is valid!`. Doğrulama için PyYAML yalnızca Git dışındaki `.local/skill-validation-deps` dizinine kuruldu; uygulama bağımlılığı eklenmedi.
+
+### Gerçek paket ve PDF incelemesi
+
+`npm run issue -- demo --output .local/issues/ucuncu-deneme.rtai.zip` ile üretilen iki sayfalık medyalı örnek, `issue:verify` üzerinden mevcut editörde gerçekten açıldı. Bütün yazılar/görseller, metin taşması, PDF sayfa sayısı ve 297 × 420 mm ölçüsü doğrulandı. Çıktılar `.local/issues/kontrol-03/` içinde: editör ve sayfa görüntüleri, `gazete.pdf`, `sonuc.json`.
+
+Bu PDF Windows.Data.Pdf üzerinden PNG'ye çevrildi; iki sayfası da görsel olarak incelendi. Türkçe metin, görsel, bölüm/başlık hiyerarşisi, alt bilgi, sıra ve kesilme kontrol edildi. İkinci sayfanın boş alanı örnekte tek yazı bulunmasından kaynaklanıyor. Ayrıca `artifacts/wrapped-a3.pdf` gerçek baskısı render edilip incelendi: metin görselin yanında daraltılmış alanda başlıyor ve altında tam kutu genişliğine dönüyor; görsel üzerine yazmıyor. `artifacts/smart-guides.png` geçici yatay hizalama çizgisini gösteriyor. Önceki A3/A4 fiziksel ölçü senaryoları tam test çalışmasında tekrar geçti.
+
+### Bu kilometre taşının sınırları
+
+- Güvenli düzen boş konum bulur; dolu sayfayı veya eski serbest tasarımları kendiliğinden yeniden kurmaz. Bilinçli örtüşme ve serbest düzen seçenekleri var. Dekoratif şekiller çakışma hesabına girmez.
+- Sarma dikdörtgen görsel sınırını kullanır; şekil çevresi veya sayfalar arası bağlı metin akışı yoktur. Taşma uyarısı ve PDF engeli içerik kaybını önlemeye yardımcı olur; kullanıcı kutuyu/yazı boyutunu düzenler. Kolon değişimi mevcut kutuları yeniden akıtmaz.
+- CLI medya başlık/boyut kontrolü tam decode değildir. Gerçek tarayıcı kontrolü ve PDF görsel incelemesi gerekir. Sabit şablonlar her uzunluktaki içeriğe otomatik uymaz.
+- Ctrl tekerleğin yakalanmadığı ve Alt tekerleğin tuvalde çalıştığı olay bazında test edildi; bütün trackpad/işletim sistemi hareketleri denenmedi.
+- Gerçek dokunmatik donanım, ekran okuyucu, Firefox/Safari, fiziksel yazıcı ve başka işletim sistemi üzerinde CLI henüz doğrulanmadı. Üretim skill'i talimat/araç olarak hazır; farklı bilgisayarda Codex ile uçtan uca kullanım henüz yapılmadı.
+- GitHub'a yükleme ve yayına alma yapılmadı. Bu klasör henüz Git deposu değil; `.local/` ignore kuralı ayrı geçici Git metaverisi ile kontrol edildi.
