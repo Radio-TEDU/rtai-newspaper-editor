@@ -26,6 +26,8 @@ Vite komutları configLoader runner kullanır; bu çalışma ortamının üst kl
 
 Terminaldeki Codex ile düzenlenebilir gazete üretip `.rtai.zip` paketini burada açabilirsiniz. Projeyle taşınan skill `.agents/skills/rtai-newspaper/SKILL.md`, yerel araç `scripts/newspaper.mjs` içindedir. Üretim, son elle düzenlemeleri koruyarak revizyon ve başka bilgisayara kurulum adımları: [Terminal iş akışı](docs/TERMINAL-WORKFLOW.md).
 
+Yeni Codex sohbetinde kullanmak için [kopyalanabilir üretim ve revizyon promptları](docs/CODEX-PROMPTS.md) hazırdır. Skill bu proje klasöründe keşfedilir; ayrıca genel kurulum gerekmez.
+
 ~~~sh
 npm run issue -- demo --output .local/issues/ornek.rtai.zip
 ~~~

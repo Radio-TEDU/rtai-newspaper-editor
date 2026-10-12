@@ -3,6 +3,7 @@
 ## Yayınlanmamış · terminal üretimi ve düzenleme
 
 - Bağımsız GitHub deposu ve `main` dalı; klonlama/kurulum adımları ve Git dışındaki kullanıcı çalışmalarını paketle taşıma açıklaması.
+- Yeni Codex sohbetinden skill çağırma, özel yerleşim üretme ve elle düzenlenen sayıyı koruyarak revize etme promptları; üç sayfalık Lorem örneğiyle yerel üretim/düzenleme doğrulaması.
 
 - Projeyle taşınan `rtai-newspaper` Codex skill'i; API bağlantısı olmadan içerikten düzenlenebilir gazete üretim akışı.
 - Terminalde `new`, `pack`, `unpack`, `check`, `demo`; mevcut çıktıyı koruma, ortak şema doğrulaması, medya sınırları ve dosya yolu kontrolü.

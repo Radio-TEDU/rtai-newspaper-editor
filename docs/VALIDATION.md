@@ -69,3 +69,18 @@ Bu PDF Windows.Data.Pdf üzerinden PNG'ye çevrildi; iki sayfası da görsel ola
 - Ctrl tekerleğin yakalanmadığı ve Alt tekerleğin tuvalde çalıştığı olay bazında test edildi; bütün trackpad/işletim sistemi hareketleri denenmedi.
 - Gerçek dokunmatik donanım, ekran okuyucu, Firefox/Safari, fiziksel yazıcı ve başka işletim sistemi üzerinde CLI henüz doğrulanmadı. Üretim skill'i talimat/araç olarak hazır; farklı bilgisayarda Codex ile uçtan uca kullanım henüz yapılmadı.
 - GitHub'a yükleme ve yayına alma yapılmadı. Bu klasör henüz Git deposu değil; `.local/` ignore kuralı ayrı geçici Git metaverisi ile kontrol edildi.
+
+## Skill ile özel gazete üretimi — 12 Ekim 2026
+
+Bu bölüm üstteki tarihsel Git/kapsam kayıtlarından sonraki durumdur. GitHub deposu artık `Radio-TEDU/rtai-newspaper-editor`; `main` dalıyla geliştirilir.
+
+`rtai-newspaper` skill'i bu sohbet tarafından okunup uygulandı. Mevcut örnek paket ve ortak model üzerinden MERCEK adlı, 19–25 Ekim 2026 etiketli üç sayfalık A3 deneme gazetesi üretildi. İçerik Lorem Ipsum ve açıkça örnek olarak etiketlenmiş Türkçe başlıklardan oluşur. Gazetede 7 bağımsız yazı, 80 ayrı öğe (26/18/36) ve iki yerde kullanılan tek PNG medya kimliği var. PNG kodla üretilmiş soyut kompozisyondur; gerçek haber/fotoğraf değildir. Kapakta rakam şeridi, ikinci sayfada görsel çevresinde akış ve alıntı paneli, üçüncü sayfada ajanda kartları kullanıldı.
+
+Yerel çıktı: `.local/issues/hafta-19-ekim-2026-01/mercek-v2.rtai.zip`. JSON, medya, ara sürümler ve PDF kontrolü bu yerel klasördedir; GitHub'a eklenmez.
+
+- CLI `pack` ve `check`: şema, medya ve güvenli düzen geçerli.
+- `issue:verify`: gerçek editörde 3 sayfa açıldı, görseller decode edildi; metin taşması ve tarayıcı hatası yok. Tek PDF'nin 3 sayfa ve 297 × 420 mm olduğu doğrulandı.
+- Son PDF `kontrol-02/gazete.pdf` Windows.Data.Pdf üzerinden render edildi; üç sayfası görsel olarak incelendi. Başlık, Türkçe karakterler, renkli bloklar, akış, sıra ve alt bilgiler kontrol edildi.
+- Ayrı geçici tarayıcı profiliyle örnek üzerinde düzenleme denendi: manşet değişimi kutu geometrisini korudu, görsel X konumu değişti, şerit dolgu rengi değişti; yeni başlık önizlemede yenileme olmadan açıldı. Dışa aktarılan paket tekrar çözümlendi; diğer iki sayfa ve medya baytları aynı kaldı. Yeniden yükleme düzenlenmiş başlığı korudu. Sonuç: `.local/issues/hafta-19-ekim-2026-01/elle-duzenleme-sonucu.json`.
+
+Bu görev uygulama kaynaklarını değiştirmedi; genel test takımı tekrar çalıştırılmadı. Yeni Codex sohbetinde üretim henüz kullanıcı tarafından denenmedi; yerel skill keşfi ve açık `$` çağrısı resmi OpenAI belgeleriyle kontrol edildi, kullanım promptları `docs/CODEX-PROMPTS.md` içine eklendi. Grup halinde taşıma yok; blok parçaları ayrı düzenlenir. Kullanıcının açık tarayıcı profiline deneme paketi yüklenmedi veya mevcut taslağı değiştirilmedi.
