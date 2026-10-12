@@ -18,13 +18,13 @@ npm run build
 npm run preview
 ~~~
 
-Üretim önizlemesi http://127.0.0.1:4173 adresindedir. dist/ klasörü statik sunucuda barındırılabilir. HTML dosyasını file:// ile açmayın. Kayıtlar **adres + port + tarayıcı profiline** bağlıdır: geliştirme ve üretim önizlemesi aynı yerel kaydı paylaşmaz. Aralarında proje paketiyle geçiş yapın.
+Üretim önizlemesi http://127.0.0.1:4173 adresindedir. dist/ klasörü statik sunucuda barındırılabilir. Atölyenin dist/index.html dosyasını file:// ile açmayın; skill'in ürettiği bağımsız gazete HTML'i doğrudan açılabilir. Kayıtlar **adres + port + tarayıcı profiline** bağlıdır: geliştirme ve üretim önizlemesi aynı yerel kaydı paylaşmaz. Aralarında proje paketiyle geçiş yapın.
 
 Vite komutları configLoader runner kullanır; bu çalışma ortamının üst klasör erişim kısıtı nedeniyle varsayılan yapılandırma paketleyicisine alternatif seçildi. Bu kısıtlı ortamın geliştirme bağımlılığı tarayıcısı da engellenebilir; üretim derlemesi + preview kullanılabilir. Kendi terminalinizde normal geliştirme sunucusu desteklenir.
 
 ## İlk sürümde kullanım
 
-Terminaldeki Codex ile düzenlenebilir gazete üretip `.rtai.zip` paketini burada açabilirsiniz. Projeyle taşınan skill `.agents/skills/rtai-newspaper/SKILL.md`, yerel araç `scripts/newspaper.mjs` içindedir. Üretim, son elle düzenlemeleri koruyarak revizyon ve başka bilgisayara kurulum adımları: [Terminal iş akışı](docs/TERMINAL-WORKFLOW.md).
+Terminaldeki Codex ile düzenlenebilir gazete HTML'i üretip burada açabilirsiniz. Bağımsız skill `skills/rtai-newspaper/` içindedir; Node.js 22.12+ ile Atölye veya npm kurulumu olmadan çalışır. Bu depodaki `.agents/skills/rtai-newspaper/SKILL.md` keşif girişidir. Üretim ve kurulum: [Terminal iş akışı](docs/TERMINAL-WORKFLOW.md). [Mimari](docs/ARCHITECTURE.md), [statik sunma/ERP gömme](docs/DEPLOYMENT.md).
 
 Yeni Codex sohbetinde kullanmak için [kopyalanabilir üretim ve revizyon promptları](docs/CODEX-PROMPTS.md) hazırdır. Skill bu proje klasöründe keşfedilir; ayrıca genel kurulum gerekmez.
 
@@ -34,16 +34,16 @@ npm run issue -- demo --output .local/issues/ornek.rtai.zip
 
 Ardından **Paket aç** ile örneği yükleyin; metin, görsel ve yerleşimi elle değiştirin. Tam yazılar sayfadaki kutulardan ayrı korunur.
 
-1. Düzenlenebilir ön sayfa şablonuyla başlayın veya soldan Boş sayı açın. Yeni sayı mevcut yerel çalışmayı değiştirir; önce paketi indirin.
+1. **Çalışmalar** ana sayfasında boş veya şablondan yeni gazete oluşturun; **Dosyadan gazete ekle** ile HTML/.rtai.zip yükleyin. Her dosya yeni bir çalışma oluşturur; diğer gazeteler korunur. Kartlardan açma, arama, ad değiştirme, HTML indirme ve silme yapılır.
 2. Soldan başlık, spot, gövde, metin, alıntı, bölüm etiketi, altyazı, şekil ve görsel ekleyin.
 3. Öğeyi tuvalden seçin. Sürükleyin veya sekiz tutamaçtan boyutlandırın. Sağ panelden metin, renk, hizalama, yazı boyutu, dolgu, kenarlık, konum ve boyut düzenleyin.
 4. Seçili öğeyi kilitleyin, gizleyin, çoğaltın, silin veya katman sırasını değiştirin. Katman listesi önden arkaya sıralanır.
 5. Boş tuvale tıklayarak sayfa ayarlarına dönün. Kolon sayısını, oranlarını, aralığı ve iç boşluğu düzenleyin. Kılavuzlar görünümü ve Hizala seçeneği bağımsızdır. Kolon ayarı öğeleri kendiliğinden taşımaz; öğeyi seçip Kolona yerleştir kullanın.
 6. Haber panelinde ayrıntılı içeriği yazın. Bir öğeyi habere bağlayın; başlık/spot/gövde alanını tuvale yansıtmayı seçin. Haber güncellenince kutu konumu ve boyutu korunur.
 7. Okuma önizlemesinde sayfaları, haber arşivini ve erişilebilir haber penceresini inceleyin. Escape veya kapatma düğmesi gazeteye döndürür.
-8. Paketi indir ile yedek alın. Paket aç ile başka profilde/tarayıcıda metin ve görsellerle birlikte geri yükleyin.
+8. **HTML indir** veya **Paketi indir** ile son halini alın. HTML tek başına okunabilir ve Atölye'de yeniden düzenlenebilir. **Çalışmalar** düğmesi bekleyen kaydı tamamlayıp ana sayfaya döner. Editörün **Boş sayı/Şablonlu sayı/Paket aç** kontrolleri önceki gazeteyi korur.
 
-Sayfalar eklenebilir, çoğaltılabilir, silinebilir ve yukarı/aşağı sıralanabilir. En az bir sayfa kalır. Yakınlaştırma %15–200 aralığındadır; Sığdır mevcut alanı kullanır. Tuval üzerinde **Alt + tekerlek** işaretçi çevresinde yakınlaştırır. Ctrl/Cmd + tekerlek tarayıcıya bırakılır. El düğmesi, basılı Space veya orta fare düğmesiyle tuvalde gezinebilirsiniz. Üstte **Paneller** iki kenar panelini açıp kapatır; seçiminiz korunur. İlk sürüm sınırları: 100 sayfa, sayfa başına 500 öğe, 2000 haber.
+Sayfalar eklenebilir, çoğaltılabilir, silinebilir ve yukarı/aşağı sıralanabilir. En az bir sayfa kalır. Yakınlaştırma %15–200 aralığındadır; Sığdır mevcut alanı kullanır. **Gazetenin üzerinde normal tekerlek zoom yapar.** **Tekerlekle zoom** seçeneğini kapatırsanız normal kaydırır; tercih bu tarayıcıda hatırlanır. Alt + tekerlek tuvalde alternatif zoom'dur; Ctrl/Cmd + tekerlek tarayıcıya bırakılır. Panellerdeki kaydırma korunur. El düğmesi, Space veya orta fare ile gezinin. **Paneller** iki kenar panelini açıp kapatır; seçiminiz korunur. Sınırlar: 100 sayfa, sayfada 500 öğe, 2000 yazı.
 
 ### Yerleşim, hizalama ve metin akışı
 
@@ -61,7 +61,7 @@ Pointer Events ile fare, kalem ve dokunmatik düzenleme desteklenir. Küçük ek
 
 ## Yerel kayıt ve görseller
 
-IndexedDB tek açık sayı için otomatik kayıt tutar. Son değişiklikten yaklaşık 650 ms sonra kayıt başlar; üstteki kayıt durumunu kontrol edin. Bekleyen/başarısız kayıt varken sekmeyi kapatmak tarayıcının çıkış uyarısını tetikler. Depolama hataları bildirilir; otomatik kurtarma mümkün değilse kaydetmeden çalışma ve paket indirme seçeneği vardır. Çalışmayı tek sekmede düzenleyin; eşzamanlı sekmeler için çatışma çözümü yoktur.
+IndexedDB birden fazla gazeteyi ayrı saklar; açık gazetede yaklaşık 650 ms sonra otomatik kayıt başlar. Çalışmalar'a dönüş kaydı bekler. Görseller gazete kimliğiyle saklanır; iki dosyanın aynı medya kimliği diğerini değiştirmez. Önceki tek gazete yükseltmede korunur. Bekleyen/başarısız kayıt sekme çıkışında uyarı verir; depolama hataları bildirilir, HTML/paket indirilerek kurtarma yapılabilir. Aynı gazeteyi tek sekmede düzenleyin; sekmeler arasında çatışma çözümü yoktur. Çalışmalar ERP hesabına veya sunucuya bağlı değildir.
 
 Görseller JSON içine Base64 olarak yazılmaz. IndexedDB'de Blob, oturumda geçici object URL olarak tutulur. Çoğaltma aynı medya kimliğini kullanır. PNG, JPEG, WebP ve GIF kabul edilir; yüklenen HTML/SVG çalıştırılmaz. Tek görsel 20 MB / 32 megapiksel, paket ve açılmış paket toplamı 100 MB, paket içindeki metin/model 10 MB ve ayrı medya sayısı 1000 ile sınırlıdır. GIF baskıda sabit kare olarak görünür. Doldur/kırp, sığdır ve odak X/Y seçenekleri vardır; piksel üzerinde yıkıcı kırpma yapılmaz.
 
@@ -71,7 +71,7 @@ Tarayıcı kotası, özel gezinme, site verisini temizleme veya işletim sistemi
 
 ## Okuma bağlantıları ve PDF
 
-Haber adresleri #haber/<id> biçimindedir. Bağlantı aynı projeyi içeren tarayıcıda doğrudan ayrıntı penceresini açar. Yeni yazı kaynak bağlantısı veya yayımlanmış/kaydedilmiş durum şartı olmadan güncel taslaktan açılır. Normal haber tıklaması sayfayı yenilemez; pencere kapanınca okuma konumu, editöre dönünce tuval konumu korunur. Bu bağlantı bir bulut yayını değildir; başka bilgisayara içerik göndermek için proje paketi gerekir. İlk sürüm bağımsız HTML yayın dosyası üretmez.
+Haber adresleri #haber/<id> biçimindedir; Atölye'de etkin gazetede, dışa aktarılan HTML'de o dosyanın yazısında açılır. Taslak için kaynak/yayın/kayıt şartı yoktur. Normal tıklama yenilemez; kapatma ve editöre dönüş konumu korur. Bağımsız HTML okuma dosyası üretilir; metin/görseller/düzenleme verisi aynı dosyadadır. Sunucuya otomatik yayınlanmaz. Sıradan HTML'yi serbest düzenlenebilir tasarıma çevirme yoktur; desteklenen `rtai-editable-html` v1 verisi gerekir.
 
 Varsayılan **A3 dikey: 297 × 420 mm**. A4 ve özel ölçü de seçilebilir; bütün sayı aynı ölçüyü kullanır. Tuval genişliği 1000 tasarım birimidir; yüksekliği fiziksel en-boy oranından türetilir. Varsayılan 34 birim iç boşluk A3'te yaklaşık 10 mm'dir. Referansın son baskı kuralı A3 + 10 mm dış kenar boşluğudur; uygulamada PDF sayfa ölçüsünü tam tutmak için @page margin:0 kullanılır, boşluk tasarımın içinde kalır. Referanstaki eski 216 × 288 mm kuralı varsayılan alınmadı.
 
@@ -112,6 +112,9 @@ Birim kontrolleri veri modelini, kolon geometrisini ve geçersiz proje/URL değe
 - src/validation.ts, src/project-package.ts: şema kontrolü ve medya içeren paket.
 - src/components/PrintView.tsx: fiziksel ölçü ve çok sayfalı baskı.
 - src/App.tsx: Türkçe editör ekranı ve akışların bağlanması.
+- src/Workspace.tsx, src/components/WorkspaceHome.tsx: yerel Çalışmalar ve gazete geçişleri.
+- src/html-document.ts, src/html-package.ts: ortak HTML sözleşmesi, bağımsız okuyucu ve güvenli içe/dışa aktarma.
+- skills/rtai-newspaper/: Atölye olmadan çalışan skill; üretilmiş ortak çalışma dosyaları.
 - scripts/newspaper.mjs, scripts/lib/: terminal üretimi, paketleme ve mevcut sayıyı açma.
 - scripts/verify-package.mjs: gerçek editörde paket/PDF doğrulaması.
 - .agents/skills/rtai-newspaper/: Codex için taşınabilir üretim talimatları.

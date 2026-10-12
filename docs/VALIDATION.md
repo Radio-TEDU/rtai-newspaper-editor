@@ -1,5 +1,20 @@
 # İlk kilometre taşı doğrulaması
 
+## Son kontrol — bağımsız skill, HTML ve Çalışmalar (12 Ekim 2026)
+
+Windows/Node 24.19/sistem Edge. Önceki bölümler tarihsel kayıttır.
+
+- TypeScript/Vite üretim derlemesi başarılı; son tarayıcı kontrolleri güncel üretim derlemesinde çalıştı.
+- Birim testleri 12/12, terminal aracı testleri 6/6 geçti. Skill başka geçici klasöre kopyalandı; Atölye ve node_modules olmadan HTML üretme, kontrol, açma/revizyon/paketleme ve üzerine yazmama doğrulandı.
+- Tam tarayıcı takımı 19/19 geçti (52.7 saniye). Çalışmalar oluşturma/açma/ad değiştirme/arama/silme, çıkışta kayıt, farklı gazetelerde aynı medya kimliğini ayırma, IndexedDB v1 geçişi, HTML import/export, kaynak HTML'i çalıştırmama, bozuk görseli reddetme, çevrimdışı HTML okuyucu ve metin sarma, normal tekerlek zoom/tercih/Ctrl davranışı, alt yolda iframe + kayıt eklendi. Önceki editör/ZIP/okuma/PDF/kota senaryoları da geçti.
+- Son olarak işlem sırasında gazete adı alanının değiştirilmesi engellendi; etkilenen dört çalışma/medya/HTML/iframe senaryosu 4/4 yeniden geçti. Birim ve terminal testleri de tekrar başarılıydı.
+- Bağımsız skill ve repo keşif girişleri quick_validate.py ile doğrulandı: Skill is valid! Uygulama bağımlılığı eklenmedi.
+- Masaüstü/mobil Çalışmalar görüntüleri artifacts/workspace-home.png ve workspace-mobile.png olarak incelendi; 390 px belge genişliği taşmadı.
+- Üç sayfalık örnek .local/issues/standalone-html/mercek-v2.html üretildi. Gerçek editörde açıldı; bütün görseller decode edildi, taşma/tarayıcı hatası yok, tek PDF 3 sayfa ve 297 × 420 mm. kontrol-02/gazete.pdf üç sayfası Windows.Data.Pdf ile render edilip görsel olarak incelendi.
+- Taşınabilir skill arşivi .local/distribution/rtai-newspaper-standalone.zip. Üretilen dosyalar/test çıktıları Git dışında kalır.
+
+Gerçek ERP entegrasyonu veya canlıya yükleme yapılmadı; otomatik yayınlama, hesap/uzak saklama ve ortak düzenleme yoktur. Iframe kontrolü aynı origin'de yerel bir statik sunucudadır. Mac/Linux, gerçek dokunmatik cihaz, ekran okuyucu, Firefox/Safari ve fiziksel yazıcı henüz doğrulanmadı. Genel HTML dönüştürme yok; düzenlenebilir HTML v1 verisi gerekir. Yerel kayıt tarayıcı profili/origin'e bağlıdır; kartlar grup halinde taşınmaz, metin otomatik başka sayfaya devam etmez.
+
 11 Ekim 2026 çalışma kapsamı. Windows, Node.js 24.19, Vite 7.3.7, React 19.2 ve sistem Microsoft Edge üzerinde yürütüldü. Sunucu olarak üretim derlemesinin 127.0.0.1:4173 önizlemesi kullanıldı.
 
 ## Çalıştırılan kontroller

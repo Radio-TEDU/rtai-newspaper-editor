@@ -1,10 +1,23 @@
 # Terminalden düzenlenebilir gazete üretimi
 
-Gazete üretimi terminaldeki Codex oturumunda yapılır. Web editörü GPT'ye bağlanmaz; üretilen `.rtai.zip` paketini açar. Skill, şema ve araçlar bu projeyle birlikte taşınır. Başka bilgisayarda Node >=22.12, `npm ci` ve üretim için kendi hesabınızla giriş yapılmış Codex gerekir. Codex üretimi internet/hesap erişimi gerektirir; hazır paketi düzenlemek için Codex gerekmez.
+Gazete üretimi terminaldeki Codex oturumunda yapılır. Atölye düzenlenebilir `.html` veya `.rtai.zip` açar. Bağımsız üretici `skills/rtai-newspaper/` içindedir; başka bilgisayarda yalnızca bu klasör, Node >=22.12 ve kendi hesabıyla giriş yapılmış Codex gerekir. Atölye ve npm kurulumu gerekmez. Hazır HTML çevrimdışı okunabilir; düzenlemek için yerel veya canlı Atölye'ye dosyadan eklenir.
+
+## Bağımsız skill kurulumu
+
+Skill ZIP'ini açın, `rtai-newspaper` klasörünü kullanıcı skill dizinine (`~/.agents/skills/rtai-newspaper`) koyun. Windows'ta bu kullanıcı klasörünüzün `.agents/skills/` altıdır. Dosyalar doğrudan bu klasörde olmalı; iç içe ikinci `rtai-newspaper` klasörü oluşturmamaya dikkat edin. `$rtai-newspaper` ile çağırın; görünmezse Codex'i yeniden başlatın. Kaynak: [OpenAI — local skills](https://learn.chatgpt.com/docs/build-skills).
+
+Genel kurulum yapmadan `SKILL.md` yolunu Codex'e verip okumasını da isteyebilirsiniz. Skill klasöründe doğrudan deneme:
+
+```sh
+node scripts/newspaper.mjs demo --output output/ornek.html
+node scripts/newspaper.mjs check --input output/ornek.html
+```
+
+Girdi/yerleşim rehberi [bağımsız skill](../skills/rtai-newspaper/SKILL.md) içindedir. Geliştirici `npm run skill:sync` ile sözleşmeyi eşitler, `npm run skill:bundle -- yeni-skill.zip` ile arşiv oluşturur. Aşağıdaki npm komutları bu depo içindir; tek başına kurulmuş skill için yukarıdaki Node komutlarını kullanın.
 
 Projeyi aynı klasörde açınca `.agents/skills/rtai-newspaper/SKILL.md` skill'i kullanılabilir. Terminalde örnek talimat:
 
-> $rtai-newspaper Bu klasördeki haberlerden ve görsellerden üç sayfalık A3 gazete hazırla. Kapakta kampüs haberi olsun. Sonucu .local/issues/ekim/sayi-01.rtai.zip olarak oluştur; editörde düzenlenebilir kalsın.
+> $rtai-newspaper Bu klasördeki haberlerden ve görsellerden üç sayfalık A3 gazete hazırla. Kapakta kampüs haberi olsun. Sonucu .local/issues/ekim/sayi-01.html olarak oluştur; Atölye'de düzenlenebilir kalsın.
 
 Skill otomatik üretim servisi değildir: Codex'in içerik/tasarım hazırlamasını yönlendirir; yerel komutlar veriyi kontrol edip paketler. API anahtarı, uygulama içi sohbet veya yerel AI köprüsü yoktur.
 
@@ -17,7 +30,7 @@ npm run issue -- check --input .local/issues/ornek.rtai.zip
 npm run dev
 ```
 
-Editörde **Paket aç** ile dosyayı açın. Açık çalışmanız varsa önce **Paketi indir** ile yedek alın; içe aktarma açık sayının yerine geçer. Başlık/metin/görseller ayrı öğelerdir; konum, boyut ve içerikleri değiştirilebilir. Okuma görünümünde yazı ayrıntısı açılır. Son düzenlemeleri yeni paketle dışa aktarın.
+Çalışmalar'da **Dosyadan gazete ekle** ile dosyayı açın. Her içe aktarma ayrı çalışma oluşturur. Editörün **Paket aç** kontrolü de mevcut gazeteyi kaydedip dosyayı yeni çalışma olarak açar. Başlık/metin/görseller ayrı düzenlenir. Son halini **HTML indir** veya **Paketi indir** ile alın. Sıradan HTML yerine skill'in düzenleme verisini taşıyan HTML kabul edilir.
 
 ## İçerikten hazır yerleşim
 

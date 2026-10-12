@@ -1,5 +1,15 @@
 # Değişiklik kaydı
 
+## Yayınlanmamış · bağımsız HTML skill'i ve Çalışmalar
+
+- `skills/rtai-newspaper/` bağımsız Node üretici; Atölye/npm olmadan HTML üretme, açma, revizyon ve kontrol. Taşınabilir ZIP paketleme ve ortak sözleşme eşitleme.
+- Sürümlü düzenleme verisi ve bir kez gömülen medya taşıyan çevrimdışı HTML; okuma penceresi, metin sarma, fiziksel ölçülü yazdırma ve bozuk görsel/taşma bildirimi.
+- Kaynak HTML'i çalıştırmadan doğrulanmış veriyle içe aktarma; editör ve kartlardan HTML dışa aktarma. Eski ZIP desteği korunur.
+- Çalışmalar ana sayfası, ayrı gazeteler, kapak görüntüleri, yeni/şablon/dosyadan ekleme, arama, ad değiştirme ve silme; dönüşte bekleyen kaydı tamamlama.
+- IndexedDB v2 geçişi ve proje kapsamlı medya; eski kayıtları koruma ve aynı görsel kimlikli gazetelerin birbirini etkilemesini önleme.
+- Gazete üzerinde normal tekerlek zoom; kapatılabilir/hatırlanan tercih, panellerde normal kaydırma ve Ctrl tarayıcı zoom'unu koruma.
+- Göreli statik dosya yolları, yerel alt yol/iframe testi ve ERP mimarisi için belgeler. Otomatik yayınlama eklenmedi.
+
 ## Yayınlanmamış · terminal üretimi ve düzenleme
 
 - Bağımsız GitHub deposu ve `main` dalı; klonlama/kurulum adımları ve Git dışındaki kullanıcı çalışmalarını paketle taşıma açıklaması.
