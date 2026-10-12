@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { preview } from 'vite';
 import { chromium } from '@playwright/test';
-import { packageFile, layoutIssues } from './lib/issue-package.mjs';
+import { projectFile, layoutIssues } from './lib/issue-package.mjs';
 
 const args = process.argv.slice(2), options = {};
 for (let i = 0; i < args.length; i += 2) {
@@ -14,7 +14,7 @@ let server, browser;
 try {
     if (!options.input || !options.output) throw new Error('--input ve --output gerekli.');
     const input = path.resolve(options.input), output = path.resolve(options.output);
-    const { project } = await packageFile(input);
+    const { project } = await projectFile(input);
     const conflicts = layoutIssues(project); if (conflicts.length) throw new Error(conflicts.join('\n'));
     if (!existsSync('dist/index.html')) throw new Error('Önce npm run build çalıştırın.');
     // An empty new directory and an isolated browser profile protect existing work.
@@ -27,8 +27,8 @@ try {
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     page.on('dialog', dialog => dialog.accept());
     await page.goto(`http://127.0.0.1:${address.port}`);
-    await page.getByText('Yerel olarak kaydedildi', { exact: true }).waitFor();
-    await page.locator('input[type=file]').nth(1).setInputFiles(input);
+    await page.getByRole('heading', { name: 'Çalışmalar', exact: true }).waitFor();
+    await page.getByLabel('Gazete dosyası').setInputFiles(input);
     await page.getByText('Proje ve bütün görseller açıldı.', { exact: true }).waitFor();
     await page.getByText('Yerel olarak kaydedildi', { exact: true }).waitFor();
     await page.screenshot({ path: path.join(output, 'editor.png'), fullPage: true });

@@ -4,7 +4,7 @@ import path from 'node:path';
 const artifacts = path.resolve('artifacts');
 async function saved(page: any) { await expect(page.getByText('Yerel olarak kaydedildi', { exact: true })).toBeVisible(); }
 async function fixture(page: any) { const data = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 900; c.height = 500; const ctx = c.getContext('2d')!; ctx.fillStyle = '#c8d5bc'; ctx.fillRect(0, 0, 900, 500); ctx.fillStyle = '#214d44'; ctx.fillRect(60, 180, 190, 320); ctx.fillRect(280, 80, 240, 420); ctx.fillStyle = '#c94131'; ctx.beginPath(); ctx.arc(710, 200, 125, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#f7f3e9'; ctx.font = '40px Georgia'; ctx.fillText('Yeni bir bakış', 570, 435); return c.toDataURL('image/png').split(',')[1]; }); return { name: 'test-editorial.png', mimeType: 'image/png', buffer: Buffer.from(data, 'base64') }; }
-test.beforeEach(async ({ page }) => { await mkdir(artifacts, { recursive: true }); await page.goto('/'); await saved(page); });
+test.beforeEach(async ({ page }) => { await mkdir(artifacts, { recursive: true }); await page.goto('/'); await page.getByRole('button', { name: 'Şablondan gazete oluştur', exact: true }).click(); await saved(page); });
 test('şablon, sürükleme, boyutlandırma, klavye, katmanlar ve yerel kayıt', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -54,7 +54,6 @@ test('şablon, sürükleme, boyutlandırma, klavye, katmanlar ve yerel kayıt', 
     expect(errors).toEqual([]);
 });
 test('boş projede metin ve görsel, paket taşıma, haber penceresi ve iki sayfalı A3 PDF', async ({ page }) => {
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: 'Boş sayı', exact: true }).click();
     await expect(page.locator('.editable .design-element')).toHaveCount(0);
     await page.getByRole('button', { name: 'Başlık', exact: true }).click();
@@ -82,10 +81,8 @@ test('boş projede metin ve görsel, paket taşıma, haber penceresi ve iki sayf
     const download = await downloading;
     const packagePath = path.join(artifacts, 'roundtrip.rtai.zip');
     await download.saveAs(packagePath);
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: 'Boş sayı', exact: true }).click();
     await expect(page.locator('.editable .design-element')).toHaveCount(0);
-    page.once('dialog', dialog => dialog.accept());
     await page.locator('input[type=file]').nth(1).setInputFiles(packagePath);
     await expect(page.locator('.page-item')).toHaveCount(2);
     await saved(page);
@@ -134,7 +131,6 @@ test('küçük ekran ve bozuk paket açık çalışmayı korur', async ({ page }
     await expect(page.locator('.page-item')).toHaveCount(1);
 });
 test('medya kayıt hatasında proje de yazılmaz; açık görsel paketle kurtarılır', async ({ page }) => {
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: 'Boş sayı', exact: true }).click();
     await saved(page);
     await page.evaluate(() => { const original = IDBObjectStore.prototype.put; IDBObjectStore.prototype.put = function (...args: any[]) { if (this.name === 'media')
@@ -143,7 +139,7 @@ test('medya kayıt hatasında proje de yazılmaz; açık görsel paketle kurtar�
     await expect(page.locator('.editable img')).toBeVisible();
     await expect(page.getByText('Kayıt yapılamadı', { exact: true })).toBeVisible();
     await expect(page.getByText(/Tarayıcı depolama alanı doldu/)).toBeVisible();
-    const stored = await page.evaluate(() => new Promise<any>((resolve, reject) => { const req = indexedDB.open('rtai-newspaper-editor', 1); req.onsuccess = () => { const read = req.result.transaction('projects').objectStore('projects').get('current'); read.onsuccess = () => resolve(read.result); read.onerror = () => reject(read.error); }; }));
+    const stored = await page.evaluate(() => new Promise<any>((resolve, reject) => { const req = indexedDB.open('rtai-newspaper-editor'); req.onsuccess = () => { const read = req.result.transaction('projects').objectStore('projects').get('current'); read.onsuccess = () => { req.result.close(); resolve(read.result); }; read.onerror = () => reject(read.error); }; req.onerror = () => reject(req.error); }));
     expect(stored.pages.flatMap((p: any) => p.elements).filter((e: any) => e.assetId)).toHaveLength(0);
     const pending = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Paketi indir', exact: true }).click();

@@ -68,7 +68,11 @@ function standaloneReader(layoutText: typeof import('./layout').layoutText, inte
         document.getElementById('status')!.textContent = count ? `${count} metin kutusu taşıyor. Düzenlemek için bu HTML’i Gazete Atölyesi’ne yükleyin.` : 'Düzenlenebilir gazete / HTML dosyasını Gazete Atölyesi’nde açabilirsiniz.';
         (document.getElementById('print') as HTMLButtonElement).disabled = count > 0;
     }
-    document.fonts.ready.then(flow);
+    async function ready() {
+        try { await document.fonts.ready; await Promise.all([...document.images].map(img => img.decode())); flow(); return true; }
+        catch { document.getElementById('status')!.textContent = 'Bazı görseller okunamadı. Görselleri düzeltip yeniden HTML üretin.'; (document.getElementById('print') as HTMLButtonElement).disabled = true; return false; }
+    }
+    void ready();
     const dialog = document.getElementById('article-dialog') as HTMLDialogElement;
     let opener: HTMLElement | null = null, scroll = 0;
     function route() {
@@ -91,8 +95,8 @@ function standaloneReader(layoutText: typeof import('./layout').layoutText, inte
         event.preventDefault(); history.pushState(null, '', link.getAttribute('href')); route();
     });
     window.addEventListener('hashchange', route); window.addEventListener('popstate', route); route();
-    document.getElementById('print')!.addEventListener('click', async () => { await Promise.all([...document.images].map(img => img.decode())); flow(); if (!document.querySelector('[data-overflow="true"]')) window.print(); });
-    window.addEventListener('pagehide', () => { for (const url of urls.values()) URL.revokeObjectURL(url); });
+    document.getElementById('print')!.addEventListener('click', async () => { if (await ready() && !document.querySelector('[data-overflow="true"]')) window.print(); });
+    window.addEventListener('pagehide', event => { if (!event.persisted) for (const url of urls.values()) URL.revokeObjectURL(url); });
 }
 export function buildEditableHtml(project: Project, assets: HtmlAsset[]): string {
     const payload = validateHtmlDocument({ format: 'rtai-editable-html', version: 1, project, assets });

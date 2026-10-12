@@ -1,7 +1,7 @@
 import { useEffect, useRef, type RefObject, type PointerEvent } from 'react';
 
-export function useCanvasNavigation(workspace: RefObject<HTMLDivElement | null>, zoom: number, setZoom: (value: number) => void, preview: boolean, panMode: boolean) {
-    const current = useRef({ zoom, setZoom }); current.current = { zoom, setZoom };
+export function useCanvasNavigation(workspace: RefObject<HTMLDivElement | null>, zoom: number, setZoom: (value: number) => void, preview: boolean, panMode: boolean, wheelZoom = true) {
+    const current = useRef({ zoom, setZoom, wheelZoom }); current.current = { zoom, setZoom, wheelZoom };
     const position = useRef({ x: 0, y: 0 });
     const space = useRef(false);
     const gesture = useRef<{ x: number; y: number; left: number; top: number } | undefined>(undefined);
@@ -20,7 +20,9 @@ export function useCanvasNavigation(workspace: RefObject<HTMLDivElement | null>,
         if (!el || preview) return;
         const frame = requestAnimationFrame(() => { el.scrollLeft = position.current.x; el.scrollTop = position.current.y; });
         const wheel = (event: WheelEvent) => {
-            if (!event.altKey || event.ctrlKey || event.metaKey) return;
+            if (event.ctrlKey || event.metaKey || event.deltaY === 0) return;
+            const bounds = el.querySelector('.paper')?.getBoundingClientRect();
+            if (!event.altKey && (!current.current.wheelZoom || !bounds || event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) return;
             event.preventDefault();
             zoomAt(current.current.zoom * Math.exp(-Math.max(-100, Math.min(100, event.deltaY)) * 0.003), event.clientX, event.clientY);
         };

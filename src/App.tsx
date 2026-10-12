@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Newspaper, Plus, Eye, Printer, Download, Upload, Undo2, Redo2, ChevronUp, ChevronDown, Copy, Trash2, ZoomIn, ZoomOut, Maximize2, Type, Heading1, AlignLeft, Quote, ImagePlus, Minus, Layers, Settings2, FileText, Check, Grid2X2, LockKeyhole, EyeOff, Link2, X, Hand, PanelLeft } from 'lucide-react';
+import { Newspaper, Plus, Eye, Printer, Download, Upload, Undo2, Redo2, ChevronUp, ChevronDown, Copy, Trash2, ZoomIn, ZoomOut, Maximize2, Type, Heading1, AlignLeft, Quote, ImagePlus, Minus, Layers, Settings2, FileText, Check, Grid2X2, LockKeyhole, EyeOff, Link2, X, Hand, PanelLeft, Home } from 'lucide-react';
 import { makeProject, makePage, makeElement, uid, pageHeight, clampRect, kindLabels, elementText, type Project, type ElementKind, type Article } from './model';
 import { useEditor } from './useEditor';
-import { loadProject, saveProject, readMedia, storageError } from './storage';
+import { saveProject, storageError } from './storage';
+import { importHtml, exportHtml } from './html-package';
 import { assetIds, exportPackage, importPackage, validateImage } from './project-package';
 import Paper from './components/Paper';
 import Properties, { NumberField } from './components/Properties';
@@ -10,41 +11,13 @@ import Reader from './components/Reader';
 import PrintView from './components/PrintView';
 import { placeSafely, layoutText, measureTextFor, isText } from './layout';
 import { useCanvasNavigation } from './useCanvasNavigation';
-interface Boot {
+export interface Boot {
     project: Project;
     media: Map<string, Blob>;
     error?: string;
     saveEnabled: boolean;
 }
-export default function App() {
-    const [boot, setBoot] = useState<Boot>();
-    const [error, setError] = useState('');
-    const [attempt, setAttempt] = useState(0);
-    useEffect(() => { let active = true; (async () => { try {
-        const project = await loadProject() ?? makeProject();
-        const media = new Map<string, Blob>();
-        const missing = [];
-        for (const id of assetIds(project)) {
-            const blob = await readMedia(id);
-            if (blob)
-                media.set(id, blob);
-            else
-                missing.push(id);
-        }
-        if (active)
-            setBoot({ project, media, saveEnabled: true, error: missing.length ? 'Bazı yerel görseller bulunamadı. Eksik görselleri yeniden yükleyin.' : undefined });
-    }
-    catch (err) {
-        if (active)
-            setError(storageError(err));
-    } })(); return () => { active = false; }; }, [attempt]);
-    if (!boot)
-        return <main className="boot"><Newspaper size={44}/><h1>Gazete Atölyesi</h1>{error ? <><p role="alert">{error}</p><button onClick={() => { setError(''); setAttempt(v => v + 1); }}>Yeniden dene</button><button onClick={() => setBoot({ project: makeProject(), media: new Map(), saveEnabled: false, error: 'Kaydetmeden çalışıyorsunuz. Projenizi paket olarak indirin. Yeni sayı açarak yerel kaydı yeniden deneyebilirsiniz.' })}>Kaydetmeden devam et</button></> : <p>Çalışmanız açılıyor…</p>}</main>;
-    return <Editor initial={boot}/>;
-}
-function Editor({ initial }: {
-    initial: Boot;
-}) {
+export default function Editor({ initial, onHome }: { initial: Boot; onHome: () => void }) {
     const editor = useEditor(initial.project);
     const { project, page, selected, selectedId, setSelectedId, mutate, updatePage, updateElement } = editor;
     const [media] = useState(initial.media);
@@ -67,7 +40,10 @@ function Editor({ initial }: {
     const importInput = useRef<HTMLInputElement>(null);
     const workspace = useRef<HTMLDivElement>(null);
     const readerScroll = useRef(0);
-    const navigation = useCanvasNavigation(workspace, zoom, setZoom, preview, panMode);
+    const [wheelZoom, setWheelZoom] = useState(() => { try { return localStorage.getItem('rtai-wheel-zoom') !== 'false'; } catch { return true; } });
+    useEffect(() => { try { localStorage.setItem('rtai-wheel-zoom', String(wheelZoom)); } catch {} }, [wheelZoom]);
+    useEffect(() => { if (!preview) history.replaceState(null, '', '#duzenle/' + project.id); }, [project.id, preview]);
+    const navigation = useCanvasNavigation(workspace, zoom, setZoom, preview, panMode, wheelZoom);
     const imageTarget = useRef<string | undefined>(undefined);
     const pendingMedia = useRef(new Map<string, Blob>());
     const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
@@ -173,9 +149,9 @@ function Editor({ initial }: {
             imageTarget.current = undefined;
         }
     }
-    async function exportProject() { setBusy(true); try {
-        await exportPackage(project, media);
-        setNotice('Metinler ve görseller proje paketi olarak indirildi.');
+    async function exportProject(html = false) { setBusy(true); try {
+        if (html) await exportHtml(project, media); else await exportPackage(project, media);
+        setNotice(html ? 'Düzenlenebilir HTML indirildi.' : 'Metinler ve görseller proje paketi olarak indirildi.');
     }
     catch (err) {
         setNotice(err instanceof Error ? err.message : 'Paket indirilemedi.');
@@ -183,52 +159,38 @@ function Editor({ initial }: {
     finally {
         setBusy(false);
     } }
+    async function persistCurrent() {
+        if (!savePermission.current) throw new Error('Kaydetmeden çalışıyorsunuz. Önce HTML veya paket indirin; yerel kayıt düzelene kadar açık çalışma korunuyor.');
+        revision.current++; await saveQueue.current.catch(() => {});
+        const active = new Set(assetIds(project));
+        await saveProject(project, new Map([...media].filter(([id]) => active.has(id))));
+        setSaving('saved');
+    }
+    function resetMedia(next: Map<string, Blob>) {
+        for (const url of Object.values(urlRegistry.current)) URL.revokeObjectURL(url);
+        media.clear(); pendingMedia.current.clear();
+        const urls = Object.create(null) as Record<string, string>;
+        for (const [id, blob] of next) { media.set(id, blob); urls[id] = URL.createObjectURL(blob); }
+        urlRegistry.current = urls; setUrls(urls);
+    }
+    async function goHome() { setBusy(true); try { await persistCurrent(); onHome(); } catch (err) { setNotice(storageError(err)); } finally { setBusy(false); } }
     async function importProject(file: File) {
         setBusy(true);
         try {
-            const imported = await importPackage(file);
-            if (!window.confirm('Açık sayının yerine bu paketi açmak istiyor musunuz? Kaydedilmemiş çalışmanız için önce paket indirin.'))
-                return;
-            revision.current++;
-            await saveQueue.current.catch(() => { });
-            if (savePermission.current)
-                await saveProject(imported.project, imported.media);
-            for (const [id, blob] of imported.media) {
-                media.set(id, blob);
-            }
-            setUrls(v => { const next = { ...v }; for (const [id, blob] of imported.media) {
-                if (next[id])
-                    URL.revokeObjectURL(next[id]);
-                next[id] = URL.createObjectURL(blob);
-            } return next; });
-            editor.replace(imported.project);
-            setActiveArticle(imported.project.articles[0]?.id ?? '');
-            setNotice('Proje ve bütün görseller açıldı.');
-        }
-        catch (err) {
-            setNotice(err instanceof Error ? err.message : 'Paket açılamadı.');
-        }
-        finally {
-            setBusy(false);
-        }
+            const imported = /\.html?$/i.test(file.name) ? await importHtml(file) : await importPackage(file);
+            await persistCurrent();
+            imported.project.id = uid(); imported.project.updatedAt = new Date().toISOString();
+            await saveProject(imported.project, imported.media);
+            resetMedia(imported.media); editor.replace(imported.project);
+            setActiveArticle(imported.project.articles[0]?.id ?? ''); setNotice('Proje ve bütün görseller açıldı.');
+        } catch (err) { setNotice(err instanceof Error ? err.message : 'Gazete açılamadı.'); }
+        finally { setBusy(false); }
     }
-    async function newIssue(template: boolean) { if (!window.confirm('Yeni sayı açılacak. Açık sayıyı korumak için önce proje paketini indirin. Devam edilsin mi?'))
-        return; setBusy(true); try {
-        const next = makeProject(template);
-        revision.current++;
-        await saveQueue.current.catch(() => { });
-        await saveProject(next);
-        setSaveEnabled(true);
-        editor.replace(next);
-        setActiveArticle(next.articles[0]?.id ?? '');
-        setNotice('Yeni sayı açıldı.');
+    async function newIssue(template: boolean) {
+        setBusy(true);
+        try { await persistCurrent(); const next = makeProject(template); await saveProject(next); resetMedia(new Map()); setSaveEnabled(true); editor.replace(next); setActiveArticle(next.articles[0]?.id ?? ''); setNotice('Yeni sayı açıldı. Önceki gazeteniz Çalışmalar’da korunuyor.'); }
+        catch (err) { setNotice(storageError(err)); } finally { setBusy(false); }
     }
-    catch (err) {
-        setNotice(storageError(err));
-    }
-    finally {
-        setBusy(false);
-    } }
     async function printIssue() { setBusy(true); try {
         for (const id of assetIds(project))
             if (!urls[id])
@@ -303,11 +265,11 @@ function Editor({ initial }: {
     const index = project.pages.findIndex(p => p.id === page.id);
     return <><div className="application" aria-busy={busy}>
     {preview ? <Reader project={project} urls={urls} articleId={articleId} onCloseArticle={clearArticle} onOpenArticle={openArticle} scrollPosition={readerScroll} onBack={() => { clearArticle(); setPreview(false); }} onPrint={printIssue} onMessage={setNotice}/> : <>
-    <header className="app-header"><a className="brand" href="#" onClick={e => e.preventDefault()}><span className="brand-symbol"><Newspaper size={22}/></span><div><strong>RTAI<span> / </span>Atölye</strong><small>GAZETE TASARIM EDİTÖRÜ</small></div></a><div className="project-title"><input aria-label="Sayı adı" maxLength={200} value={project.name} onChange={e => mutate(p => { p.name = e.target.value; })}/><span className={'save-state ' + saving} role="status">{saving === 'saved' ? <Check size={12}/> : null}{saving === 'saved' ? 'Yerel olarak kaydedildi' : saving === 'pending' ? 'Kaydediliyor…' : saving === 'disabled' ? 'Yerel kayıt kapalı' : 'Kayıt yapılamadı'}</span></div><div className="header-actions"><button aria-label={panelsHidden ? "Panelleri göster" : "Panelleri gizle"} aria-expanded={!panelsHidden} aria-controls="left-panel right-panel" onClick={() => setPanelsHidden(v => !v)}><PanelLeft size={16}/><span>Paneller</span></button><button onClick={() => setPreview(true)} disabled={busy}><Eye size={16}/> Okuma önizlemesi</button><button className="primary" onClick={printIssue} disabled={busy}><Printer size={16}/> PDF / Yazdır</button></div></header>
+    <header className="app-header"><a className="brand" href="#" onClick={e => e.preventDefault()}><span className="brand-symbol"><Newspaper size={22}/></span><div><strong>RTAI<span> / </span>Atölye</strong><small>GAZETE TASARIM EDİTÖRÜ</small></div></a><div className="project-title"><input disabled={busy} aria-label="Gazete adı" maxLength={200} value={project.name} onChange={e => mutate(p => { p.name = e.target.value; })}/><span className={'save-state ' + saving} role="status">{saving === 'saved' ? <Check size={12}/> : null}{saving === 'saved' ? 'Yerel olarak kaydedildi' : saving === 'pending' ? 'Kaydediliyor…' : saving === 'disabled' ? 'Yerel kayıt kapalı' : 'Kayıt yapılamadı'}</span></div><div className="header-actions"><button disabled={busy} onClick={() => { void goHome(); }}><Home size={16}/>Çalışmalar</button><button aria-label={panelsHidden ? "Panelleri göster" : "Panelleri gizle"} aria-expanded={!panelsHidden} aria-controls="left-panel right-panel" onClick={() => setPanelsHidden(v => !v)}><PanelLeft size={16}/><span>Paneller</span></button><button onClick={() => setPreview(true)} disabled={busy}><Eye size={16}/> Okuma önizlemesi</button><button className="primary" onClick={printIssue} disabled={busy}><Printer size={16}/> PDF / Yazdır</button></div></header>
     <div className={"editor-layout" + (panelsHidden ? " panels-hidden" : "")} inert={busy}><aside id="left-panel" className="left-panel" hidden={panelsHidden}><section className="page-section"><div className="section-title"><h2>Sayfalar <span>{project.pages.length}</span></h2><button title="Boş sayfa ekle" aria-label="Boş sayfa ekle" onClick={() => addPage()} disabled={busy || project.pages.length >= 100}><Plus size={17}/></button></div><div className="page-list">{project.pages.map((p, i) => <button className={'page-item ' + (p.id === page.id ? 'active' : '')} key={p.id} onClick={() => { editor.setPageId(p.id); setSelectedId(undefined); }}><span className="mini-paper"><span className="mini-masthead"/>{p.elements.filter(e => !e.hidden).slice(0, 22).map(e => <i key={e.id} style={{ left: e.x / 10 + '%', top: e.y / pageHeight(project) * 100 + '%', width: e.width / 10 + '%', height: e.height / pageHeight(project) * 100 + '%', background: e.kind === 'image' ? '#b5c5b9' : e.kind === 'shape' ? e.background : '#d4d2c8' }}/>)}</span><span className="page-item-text"><b>{String(i + 1).padStart(2, '0')}</b><span>{p.name}</span><small>{p.elements.length} öğe</small></span></button>)}</div><div className="page-actions"><button aria-label="Sayfayı yukarı taşı" title="Sayfayı yukarı taşı" disabled={index === 0} onClick={() => movePage(-1)}><ChevronUp size={16}/></button><button aria-label="Sayfayı aşağı taşı" title="Sayfayı aşağı taşı" disabled={index === project.pages.length - 1} onClick={() => movePage(1)}><ChevronDown size={16}/></button><button aria-label="Sayfayı çoğalt" title="Sayfayı çoğalt" onClick={duplicatePage}><Copy size={15}/></button><button aria-label="Sayfayı sil" title="Sayfayı sil" disabled={project.pages.length === 1} onClick={deletePage}><Trash2 size={15}/></button></div><button className="text-button" onClick={() => addPage(true)}><Plus size={13}/> Şablondan sayfa ekle</button></section>
     <section className="add-section"><span className="eyebrow">SAYFANIZI OLUŞTURUN</span><h2>Öğe ekle</h2><div className="element-tools">{(['headline', 'deck', 'body', 'text', 'quote', 'section', 'caption', 'shape'] as ElementKind[]).map(kind => { const Icon = kind === 'headline' ? Heading1 : kind === 'quote' ? Quote : kind === 'shape' ? Minus : kind === 'body' ? AlignLeft : Type; return <button key={kind} onClick={() => add(kind)} disabled={busy || page.elements.length >= 500}><Icon size={18}/><span>{kindLabels[kind]}</span></button>; })}<button className="image-add" onClick={() => { imageTarget.current = undefined; imageInput.current?.click(); }} disabled={busy}><ImagePlus size={19}/><span>Görsel yükle</span><Plus size={14}/></button></div></section>
-    <section className="project-section"><h2>Proje dosyası</h2><button onClick={exportProject} disabled={busy}><Download size={15}/> Paketi indir</button><button onClick={() => importInput.current?.click()} disabled={busy}><Upload size={15}/> Paket aç</button><div className="new-project-actions"><button className="text-button" onClick={() => newIssue(false)} disabled={busy}>Boş sayı</button><button className="text-button" onClick={() => newIssue(true)} disabled={busy}>Şablonlu sayı</button></div><p>Çalışmanız bu tarayıcıda saklanır.<br />Paket indirerek yedeğinizi alın.</p></section><div className="left-footer"><span className="status-dot"/> Bağımsız & yerel<span>v0.1</span></div></aside>
-    <main className="canvas-region"><div className="canvas-toolbar"><div className="button-row"><button aria-label="Geri al" title="Geri al (Ctrl+Z)" disabled={!editor.canUndo || busy} onClick={editor.undo}><Undo2 size={17}/></button><button aria-label="Yinele" title="Yinele (Ctrl+Shift+Z)" disabled={!editor.canRedo || busy} onClick={editor.redo}><Redo2 size={17}/></button><span className="toolbar-divider"/><span className="canvas-page-name">{page.name}</span></div><div className="button-row"><button className={guides ? 'toggled' : ''} aria-pressed={guides} onClick={() => setGuides(v => !v)} title="Kolon kılavuzları"><Grid2X2 size={15}/><span>Kılavuzlar</span></button><label className="snap-option"><input type="checkbox" checked={snap} onChange={e => setSnap(e.target.checked)}/> Hizala</label></div></div>
+    <section className="project-section"><h2>Proje dosyası</h2><button onClick={() => { void exportProject(); }} disabled={busy}><Download size={15}/> Paketi indir</button><button onClick={() => { void exportProject(true); }}><Download size={15}/>HTML indir</button><button onClick={() => importInput.current?.click()} disabled={busy}><Upload size={15}/> Paket aç</button><div className="new-project-actions"><button className="text-button" onClick={() => newIssue(false)} disabled={busy}>Boş sayı</button><button className="text-button" onClick={() => newIssue(true)} disabled={busy}>Şablonlu sayı</button></div><p>Çalışmanız bu tarayıcıda saklanır.<br />Paket indirerek yedeğinizi alın.</p></section><div className="left-footer"><span className="status-dot"/> Bağımsız & yerel<span>v0.1</span></div></aside>
+    <main className="canvas-region"><div className="canvas-toolbar"><div className="button-row"><button aria-label="Geri al" title="Geri al (Ctrl+Z)" disabled={!editor.canUndo || busy} onClick={editor.undo}><Undo2 size={17}/></button><button aria-label="Yinele" title="Yinele (Ctrl+Shift+Z)" disabled={!editor.canRedo || busy} onClick={editor.redo}><Redo2 size={17}/></button><span className="toolbar-divider"/><span className="canvas-page-name">{page.name}</span></div><div className="button-row"><button className={guides ? 'toggled' : ''} aria-pressed={guides} onClick={() => setGuides(v => !v)} title="Kolon kılavuzları"><Grid2X2 size={15}/><span>Kılavuzlar</span></button><label className="snap-option"><input type="checkbox" checked={snap} onChange={e => setSnap(e.target.checked)}/> Hizala</label><label className="wheel-setting" title="Gazetenin üzerinde tekerlek zoom yapar. Kapalıyken kaydırır; Alt + tekerlek yine zoom yapar."><input type="checkbox" checked={wheelZoom} onChange={e => setWheelZoom(e.target.checked)}/>Tekerlekle zoom</label></div></div>
     <div className={"workspace" + (panMode ? " pan-mode" : "")} ref={workspace} tabIndex={0} aria-label="Gazete tuvali" {...navigation.handlers}><div className="canvas-stage"><div className="canvas-label"><span>{String(index + 1).padStart(2, '0')} — {page.name}</span><span>{project.widthMm} × {project.heightMm} mm</span></div><Paper project={project} page={page} urls={urls} scale={zoom} editable={!busy} selectedId={selectedId} guides={guides} snap={snap} onSelect={setSelectedId} onStart={editor.checkpoint} onChange={(id, patch) => updateElement(id, patch, false)} onFinish={() => { }}/></div></div>
     <footer className="canvas-footer"><span>{selected ? selected.name : 'Bir öğe seçin; sürükleyin veya sağ panelden düzenleyin.'}</span><div className="zoom-controls"><button aria-label="Tuvali sürükleyerek gez" aria-pressed={panMode} title="Tuvali sürükleyerek gez · Boşluk tuşu veya orta fare düğmesi de kullanılabilir" onClick={() => setPanMode(v => !v)}><Hand size={16}/></button><button aria-label="Uzaklaştır" disabled={zoom <= 0.15} onClick={() => navigation.zoomAt(zoom - 0.1)}><ZoomOut size={16}/></button><span>{Math.round(zoom * 100)}%</span><button aria-label="Yakınlaştır" disabled={zoom >= 2} onClick={() => navigation.zoomAt(zoom + 0.1)}><ZoomIn size={16}/></button><button onClick={fit} title="Ekrana sığdır"><Maximize2 size={15}/><span>Sığdır</span></button></div></footer></main>
     <aside id="right-panel" className="right-panel" hidden={panelsHidden}><div className="panel-tabs" role="tablist" aria-label="Düzenleme panelleri"><button role="tab" aria-selected={rightTab === 'properties'} onClick={() => setRightTab('properties')}><Settings2 size={15}/> Özellikler</button><button role="tab" aria-selected={rightTab === 'layers'} onClick={() => setRightTab('layers')}><Layers size={15}/> Katmanlar</button><button role="tab" aria-selected={rightTab === 'articles'} onClick={() => setRightTab('articles')}><FileText size={15}/> Haber</button></div>
@@ -316,7 +278,7 @@ function Editor({ initial }: {
             resizeIssue(210, 297); }}><option value="a3">A3 · 297 × 420 mm</option><option value="a4">A4 · 210 × 297 mm</option><option value="custom">Özel ölçü</option></select></label><p className="helper">Ölçü bütün sayılara değil, bu sayının bütün sayfalarına uygulanır. İçerik tasarımı ölçeklenir; en-boy oranı değişirse sınırdaki öğeler sayfa içine alınır.</p><label className="field"><span>Yerleşim davranışı</span><select value={page.layoutMode ?? "free"} onChange={e => updatePage(p => { p.layoutMode = e.target.value as "safe" | "free"; })}><option value="safe">Güvenli · çakışmayı önle</option><option value="free">Serbest · katmanlarla tasarla</option></select></label><p className="helper">Güvenli düzende yeni ve taşınan öğeler boş alana yerleşir. Önceden var olan tasarım yeniden kurulmaz. Görselde sarma açarak metinle birlikte kullanabilirsiniz. Alt + tekerlek: tuvali yakınlaştır; Ctrl: tarayıcı yakınlaştırması.</p><h3>Kolon yapısı</h3><label className="field"><span>Kolon sayısı</span><select value={page.columns.length} onChange={e => updatePage(p => { p.columns = Array.from({ length: Number(e.target.value) }, () => 1); })}>{[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} kolon</option>)}</select></label><div className="field-grid"><NumberField label="Kolon aralığı" value={page.gap} max={80} onChange={v => updatePage(p => { p.gap = v; })}/><NumberField label="İç boşluk" value={page.margin} max={150} onChange={v => updatePage(p => { p.margin = v; })}/></div>{page.columns.map((weight, i) => <NumberField key={i} label={i + 1 + '. kolon oranı'} value={weight} min={0.1} max={10} step={0.1} onChange={v => updatePage(p => { p.columns[i] = v; })}/>)}<p className="helper">Konum ve kolon değerleri 1000 birim genişliğindeki tuvale göredir. Kolon ayarları kılavuzları değiştirir; öğeler otomatik taşınmaz. Bir öğeyi seçip “Kolona yerleştir” ile hizalayın.</p><div className="empty-selection"><span>↖</span><h3>Bir öğe seçin.</h3><p>Metin, görsel ve konum ayarları burada açılır.</p></div></div></>) : rightTab === 'layers' ? <><div className="panel-heading"><div><span className="eyebrow">ÖNDEN ARKAYA</span><h2>Sayfanın katmanları</h2></div></div><div className="layer-list">{[...page.elements].reverse().map(e => <div className={'layer-row ' + (e.id === selectedId ? 'active' : '')} key={e.id}><button className="layer-select" onClick={() => setSelectedId(e.id)}><span>{e.kind === 'image' ? <ImagePlus size={15}/> : e.kind === 'shape' ? <Minus size={15}/> : <Type size={15}/>}</span><span>{e.name}</span></button><button aria-label={e.name + (e.hidden ? ' göster' : ' gizle')} onClick={() => updateElement(e.id, { hidden: !e.hidden })}>{e.hidden ? <EyeOff size={13}/> : <Eye size={13}/>}</button><button aria-label={e.name + (e.locked ? ' kilidini aç' : ' kilitle')} onClick={() => updateElement(e.id, { locked: !e.locked })}><LockKeyhole size={13} opacity={e.locked ? 1 : 0.35}/></button></div>)}</div>{selected && <div className="layer-actions"><button disabled={selected.locked} onClick={() => orderElement(1)}><ChevronUp size={15}/> Öne al</button><button disabled={selected.locked} onClick={() => orderElement(-1)}><ChevronDown size={15}/> Arkaya gönder</button></div>}<p className="helper padded">Üstteki öğe tuvalde de öndedir. Gizli öğeler okuma ve baskı görünümünde yer almaz.</p></> : <><div className="panel-heading"><div><span className="eyebrow">İÇERİK MASASI</span><h2>Hikâyeyi tamamlayın.</h2></div></div><div className="properties-content"><button className="wide" onClick={createArticle}><Plus size={15}/> Haber ekle</button>{active ? <><label className="field"><span>Haber seç</span><select value={active.id} onChange={e => setActiveArticle(e.target.value)}>{project.articles.map(a => <option value={a.id} key={a.id}>{a.title.slice(0, 50)}</option>)}</select></label>{(['section', 'title', 'summary', 'body', 'url'] as const).map(field => <label className="field" key={field}><span>{{ section: 'Bölüm', title: 'Haber başlığı', summary: 'Spot', body: 'Haberin tamamı', url: 'Kaynak bağlantısı (http/https)' }[field]}</span>{field === 'body' || field === 'summary' ? <textarea maxLength={field === 'body' ? 1000000 : 10000} rows={field === 'body' ? 10 : 3} value={active[field]} onChange={e => editArticle(active.id, { [field]: e.target.value })}/> : <input maxLength={10000} value={active[field]} onChange={e => editArticle(active.id, { [field]: e.target.value })}/>}</label>)}<button onClick={() => openArticle(active.id)}><Eye size={15}/> Haberi oku</button><p className="helper">Bu haberin içeriği yerleşimden bağımsızdır. Bağlı başlık/spot güncellenir; kutuların konumu ve boyutu korunur.</p></> : <p className="helper">İlk haberinizi ekleyin, sonra bir tuval öğesinden haber bağlantısını seçin.</p>}</div></>}
     </div><div className="right-footer"><Link2 size={13}/><span>{storageUsage || 'Bu tarayıcıda otomatik kayıt'}</span></div></aside></div></>}
     <input ref={imageInput} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file)
-        void uploadImage(file); }}/><input ref={importInput} type="file" accept=".zip,.rtai.zip" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file)
+        void uploadImage(file); }}/><input ref={importInput} type="file" accept=".zip,.rtai.zip,.html,.htm" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file)
         void importProject(file); }}/>
     {notice && <div className="notice" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Bildirimi kapat"><X size={16}/></button></div>}{busy && <div className="busy-label" role="status">İşlem sürüyor…</div>}
     </div><PrintView project={project} urls={urls}/></>;

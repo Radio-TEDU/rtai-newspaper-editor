@@ -10,13 +10,13 @@ import { demoImage } from '../scripts/lib/media.mjs';
 const artifacts = path.resolve('artifacts');
 let generated: string;
 const saved = (page: any) => expect(page.getByText('Yerel olarak kaydedildi', { exact: true })).toBeVisible();
-async function openPackage(page: any, file: string) { page.once('dialog', (dialog: any) => dialog.accept()); await page.locator('input[type=file]').nth(1).setInputFiles(file); await expect(page.getByText('Proje ve bütün görseller açıldı.', { exact: true })).toBeVisible(); }
+async function openPackage(page: any, file: string) { await page.locator('input[type=file]').nth(1).setInputFiles(file); await expect(page.getByText('Proje ve bütün görseller açıldı.', { exact: true })).toBeVisible(); }
 test.beforeAll(async () => {
     await mkdir(artifacts, { recursive: true });
     generated = path.join(artifacts, 'terminal-' + crypto.randomUUID() + '.rtai.zip');
     await promisify(execFile)(process.execPath, ['scripts/newspaper.mjs', 'demo', '--output', generated]);
 });
-test.beforeEach(async ({ page }) => { await page.goto('/'); await saved(page); });
+test.beforeEach(async ({ page }) => { await page.goto('/'); await page.getByRole('button', { name: 'Şablondan gazete oluştur', exact: true }).click(); await saved(page); });
 
 test('terminal paketi düzenlenir, yeniden paketlenir ve dokunulmayan sayfa korunur', async ({ page }) => {
     const original = decode(new Uint8Array(await readFile(generated))).project;
@@ -74,7 +74,7 @@ test('tuval zoom/pan ve panel kontrolü seçimi korur; Ctrl tekerlek tutulmaz', 
 });
 
 test('güvenli sayfada yeni öğeler örtüşmez; taşan metin PDF hazırlığını durdurur', async ({ page }) => {
-    page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Boş sayı', exact: true }).click();
+    await page.getByRole('button', { name: 'Boş sayı', exact: true }).click();
     await page.getByRole('button', { name: 'Gövde yazısı', exact: true }).click();
     await page.getByRole('button', { name: 'Öğeyi çoğalt', exact: true }).click();
     const boxes = await page.locator('.editable .design-element').evaluateAll(nodes => nodes.map(el => ({ x: parseFloat((el as HTMLElement).style.left), y: parseFloat((el as HTMLElement).style.top), w: parseFloat((el as HTMLElement).style.width), h: parseFloat((el as HTMLElement).style.height) })));

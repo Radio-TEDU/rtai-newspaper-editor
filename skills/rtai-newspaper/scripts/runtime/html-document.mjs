@@ -99,7 +99,20 @@ function standaloneReader(layoutText, intersects) {
         document.getElementById('status').textContent = count ? `${count} metin kutusu taşıyor. Düzenlemek için bu HTML’i Gazete Atölyesi’ne yükleyin.` : 'Düzenlenebilir gazete / HTML dosyasını Gazete Atölyesi’nde açabilirsiniz.';
         document.getElementById('print').disabled = count > 0;
     }
-    document.fonts.ready.then(flow);
+    async function ready() {
+        try {
+            await document.fonts.ready;
+            await Promise.all([...document.images].map(img => img.decode()));
+            flow();
+            return true;
+        }
+        catch {
+            document.getElementById('status').textContent = 'Bazı görseller okunamadı. Görselleri düzeltip yeniden HTML üretin.';
+            document.getElementById('print').disabled = true;
+            return false;
+        }
+    }
+    void ready();
     const dialog = document.getElementById('article-dialog');
     let opener = null, scroll = 0;
     function route() {
@@ -149,10 +162,11 @@ function standaloneReader(layoutText, intersects) {
     window.addEventListener('hashchange', route);
     window.addEventListener('popstate', route);
     route();
-    document.getElementById('print').addEventListener('click', async () => { await Promise.all([...document.images].map(img => img.decode())); flow(); if (!document.querySelector('[data-overflow="true"]'))
+    document.getElementById('print').addEventListener('click', async () => { if (await ready() && !document.querySelector('[data-overflow="true"]'))
         window.print(); });
-    window.addEventListener('pagehide', () => { for (const url of urls.values())
-        URL.revokeObjectURL(url); });
+    window.addEventListener('pagehide', event => { if (!event.persisted)
+        for (const url of urls.values())
+            URL.revokeObjectURL(url); });
 }
 export function buildEditableHtml(project, assets) {
     const payload = validateHtmlDocument({ format: 'rtai-editable-html', version: 1, project, assets });
