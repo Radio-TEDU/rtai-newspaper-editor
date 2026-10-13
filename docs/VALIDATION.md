@@ -1,5 +1,15 @@
 # İlk kilometre taşı doğrulaması
 
+## Metin düzenleme, yeniden açma ve PDF — 13 Ekim 2026
+
+Kullanıcının son gazetesinden HTML yedeği alınarak ayrı test çalışması oluşturuldu; özgün çalışma değiştirilmedi. Başlık ve spot güncellendi, tam yazıya 3271 karakterlik Türkçe örnek metin eklendi. Başlık kutusunun geometrisi önce/sonra eşleşti. Uzun yazı native dialog içinde son paragraf dahil eksiksiz açıldı.
+
+Uzun metin sayfa gövde kutusuna verildiğinde taşma işareti ve PDF hazırlığını durduran hata doğrulandı. Kutuda kısa özet bırakıldı, tam yazı Article.body içinde korundu; taşma sıfıra indi. HTML indir–ayrı çalışma olarak aç–tekrar indir karşılaştırması bütün içerik/öğe özelliklerinde sıfır fark verdi (beklenen project.id ve updatedAt hariç). Medya SHA-256 özetleri aynıydı. Yeniden açılan yazının tamamı dialog'da doğrulandı; özgün yedekle son sürüm arasında hiçbir öğenin x/y/width/height değeri değişmedi.
+
+`npm run build` başarılı. `npm run issue:verify` güncel üretim derlemesinde ayrı tarayıcı profiline son HTML'i yükledi: görseller decode oldu, baskı taşması ve tarayıcı hataları yok, tek PDF 3 sayfa. pypdf ile sayfa sırası ve yeni başlık kontrol edildi; her MediaBox yaklaşık 297.01 × 420.20 mm, hedef A3 ölçüsüne 0.5 mm tolerans içinde. Poppler ile gerçek PDF'nin üç sayfası PNG'ye render edilip görsel olarak incelendi; Türkçe karakterler, görseller, sayfa sonları ve araçların gizlenmesi kontrol edildi.
+
+Yerel çıktı klasörü `.local/issues/metin-pdf-13-ekim/`; model/medya karşılaştırması `roundtrip-result.json`, PDF/geometri sonucu `pdf-check-result.json`, PDF ve renderlar `pdf-kontrol/` içinde. Dosyalar Git dışında. Test kopyası Atölyede açık bırakıldı. Bu kontrol tarayıcı yazdırma motorunun gerçek PDF çıktısını kapsar; kullanıcının işletim sistemi yazdırma penceresi, fiziksel yazıcı ve bütün otomatik test takımları bu turda ayrıca denenmedi. Uygulama kaynaklarında düzeltme gerekmedi.
+
 ## Kullanıcıyla HTML yeniden açma — 13 Ekim 2026
 
 Bağımsız skill ile üretilen PUSULA gazetesinde kullanıcı kapak öğelerinin konumlarını değiştirdi. Açık Atölye sekmesinden HTML indirildi, Çalışmalar dosya seçicisiyle ayrı çalışma olarak açıldı ve yeniden HTML dışa aktarıldı. İki dosyanın model alanları karşılaştırıldı: project.id ve updatedAt dışındaki bütün proje verisi aynı. Üç sayfa, altı yazı, 50 öğe, sayfa sırası ve 297 × 420 mm ölçü korundu. İki medya kaydının MIME, bayt uzunluğu ve SHA-256 özetleri eşleşti. Okuma görünümünde görseller açıldı ve taşma işareti sayısı sıfırdı. Yerel kayıt göstergesi görüldü; eski çalışma korundu.

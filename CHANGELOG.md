@@ -4,6 +4,7 @@
 
 - Ayrıntılı teknik rehber: sistem mimarisi, veri modeli, editör/yerleşim, IndexedDB, medya, bağımsız skill, HTML/ZIP, okuma, PDF, güvenlik, testler ve ERP kararları; altı Mermaid şeması.
 - Kullanıcıyla HTML indir–yeniden aç denemesinin kapsamı ve doğrulama sonucu belgelendi; kişisel deneme dosyaları Git dışında tutulur.
+- Ayrı test kopyasında başlık/uzun Türkçe yazı, taşmada PDF engeli ve HTML yeniden açma doğrulandı. Güncel üç sayfalık A3 PDF'nin sıra, ölçü, metin ve gerçek render kontrolleri belgelendi; uygulama kodunda değişiklik gerekmedi.
 
 ## Yayınlanmamış · bağımsız HTML skill'i ve Çalışmalar
 

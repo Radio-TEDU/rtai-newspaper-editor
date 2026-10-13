@@ -536,6 +536,8 @@ Mevcut uygulamada kimlik doğrulama ve kullanıcı izolasyonu yoktur. Aynı orig
 
 Bu oturumdaki kullanıcı değişikliği konum değişikliğiydi; yazı metinlerini değiştirme veya bu PUSULA sürümünden PDF alma bu elle denemeye dahil değildi. Önceki otomatik test kapsamı ile bu testin kapsamı aynı kabul edilmemelidir. Kişisel deneme dosyaları ve ayrıntılı karşılaştırma sonucu `.local/issues/elle-deneme-13-ekim/` içinde kalır; GitHub'a eklenmez.
 
+Aynı gün yapılan sonraki testte ayrı kopyada başlık/spot ve 3271 karakterlik tam yazı değiştirildi. Kutuda taşan metin PDF hazırlığını engelledi; sayfada kısa özet bırakılarak taşma giderildi. HTML yeniden açma içerik ve medya karşılaştırması geçti, tüm öğe geometrileri korundu. Güncel derlemeden gerçek üç sayfalık PDF üretildi; A3 ölçüsü 0.5 mm tolerans içinde, sıra ve yeni başlık doğruydu. PDF'nin bütün sayfaları Poppler ile render edilip incelendi. Ayrıntılı tarihli sonuç [VALIDATION.md](VALIDATION.md) içindedir; kişisel çıktılar `.local/issues/metin-pdf-13-ekim/` klasöründedir.
+
 ### Komutlar
 
 ```sh
