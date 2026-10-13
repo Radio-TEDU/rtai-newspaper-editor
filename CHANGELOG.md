@@ -1,5 +1,10 @@
 # Değişiklik kaydı
 
+## 13 Ekim 2026 · teknik belge
+
+- Ayrıntılı teknik rehber: sistem mimarisi, veri modeli, editör/yerleşim, IndexedDB, medya, bağımsız skill, HTML/ZIP, okuma, PDF, güvenlik, testler ve ERP kararları; altı Mermaid şeması.
+- Kullanıcıyla HTML indir–yeniden aç denemesinin kapsamı ve doğrulama sonucu belgelendi; kişisel deneme dosyaları Git dışında tutulur.
+
 ## Yayınlanmamış · bağımsız HTML skill'i ve Çalışmalar
 
 - `skills/rtai-newspaper/` bağımsız Node üretici; Atölye/npm olmadan HTML üretme, açma, revizyon ve kontrol. Taşınabilir ZIP paketleme ve ortak sözleşme eşitleme.

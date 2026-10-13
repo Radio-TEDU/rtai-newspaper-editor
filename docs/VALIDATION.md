@@ -1,5 +1,11 @@
 # İlk kilometre taşı doğrulaması
 
+## Kullanıcıyla HTML yeniden açma — 13 Ekim 2026
+
+Bağımsız skill ile üretilen PUSULA gazetesinde kullanıcı kapak öğelerinin konumlarını değiştirdi. Açık Atölye sekmesinden HTML indirildi, Çalışmalar dosya seçicisiyle ayrı çalışma olarak açıldı ve yeniden HTML dışa aktarıldı. İki dosyanın model alanları karşılaştırıldı: project.id ve updatedAt dışındaki bütün proje verisi aynı. Üç sayfa, altı yazı, 50 öğe, sayfa sırası ve 297 × 420 mm ölçü korundu. İki medya kaydının MIME, bayt uzunluğu ve SHA-256 özetleri eşleşti. Okuma görünümünde görseller açıldı ve taşma işareti sayısı sıfırdı. Yerel kayıt göstergesi görüldü; eski çalışma korundu.
+
+Bu denemede yazı metinleri değiştirilmedi ve bu sürümün PDF'si alınmadı. Otomatik test takımları bu deneme veya teknik belge hazırlığı için yeniden çalıştırılmadı. Kişisel çıktılar .local/issues/elle-deneme-13-ekim/ içinde kalır; ayrıntılı sonuç roundtrip-result.json dosyasındadır. Uygulama kaynaklarında değişiklik gerekmedi.
+
 ## Son kontrol — bağımsız skill, HTML ve Çalışmalar (12 Ekim 2026)
 
 Windows/Node 24.19/sistem Edge. Önceki bölümler tarihsel kayıttır.

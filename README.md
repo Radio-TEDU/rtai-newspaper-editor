@@ -2,6 +2,8 @@
 
 Tarayıcıda çalışan, Türkçe arayüzlü bağımsız gazete tasarım editörü. React, TypeScript ve Vite kullanır. Sunucu hesabı, ERP, rol yönetimi veya bulut depolama içermez.
 
+Ayrıntılı mimari, veri modeli, kayıt, bağımsız skill, HTML/PDF akışları ve test kapsamı için [teknik rehberi](docs/TECHNICAL-GUIDE.md) okuyun. Rehber Mermaid şemaları ve modül haritası içerir.
+
 ## Kurulum ve çalıştırma
 
 Node.js 22.12+ (bu çalışmada 24.19 kullanıldı) ve npm gerekir.
