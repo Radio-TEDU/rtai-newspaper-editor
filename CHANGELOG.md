@@ -1,5 +1,9 @@
 # Değişiklik kaydı
 
+## 13 Ekim 2026 · teknik rehberin güncellenmesi
+
+- Teknik rehber e9cf1be kod durumuna yenilendi: rota sahipliği ve bileşen sınırları, yedekle çıkış/güncellik onayı, hata ayrımı, 15/6/25 test sonuçları ve açık inceleme maddeleri. Rota ve kurtarma şemaları eklendi.
+
 ## 13 Ekim 2026 · haber bağlantıları ve hata sonrası devam
 
 - Haber, okuma ve sayfa hash'lerinde gazete kimliği; doğru projeyle yenileme/geçmiş, canlı proje geçişinde son taslağı kaydetme ve belirsiz eski linkte tahmin yapmama.

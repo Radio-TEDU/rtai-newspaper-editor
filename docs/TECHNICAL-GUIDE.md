@@ -1,10 +1,12 @@
 # RTAI Gazete Atölyesi teknik mimarisi ve çalışma rehberi
 
-**Güncelleme:** 13 Ekim 2026 · **Uygulama sürümü:** 0.1.0 · **İncelenen kod:** `ecedd23` ve önceki özellik commit'leri.
+**Güncelleme:** 13 Ekim 2026 · **Uygulama sürümü:** 0.1.0 · **İncelenen kod:** `e9cf1be`.
 
 RTAI Gazete Atölyesi, gazete sayılarını tarayıcıda düzenleyen bir web uygulaması ile aynı dosya biçimini üreten bağımsız bir Codex skill'inden oluşur. Kullanıcı kendi bilgisayarındaki Codex ile gazeteyi üretir, HTML dosyasını Atölyeye yükler, yerleşimi elle düzenler ve sonucu yeniden HTML veya medya içeren proje paketi olarak indirir. Okuma görünümü ve çok sayfalı PDF hazırlığı bu akışın parçasıdır.
 
 Bu rehber ürünü devralacak geliştirici, kurulumu yapacak kişi ve ileride ERP entegrasyonunu tasarlayacak teknik ekip içindir. Aşağıdaki mimari mevcut kaynak kodunu açıklar. ERP, hesaplar, uzak depolama ve otomatik yayınlama henüz uygulanmamıştır. Son bölümdeki entegrasyon adımları sonraki aşamaya ait karar noktalarıdır.
+
+Son kod güncellemesi gazete kapsamlı haber/okuma bağlantılarını ve hata sonrası devam akışını içerir. Rota yönetimi `Workspace` ve `routes.ts` üzerinden yürütülür; kayıt başarısız olduğunda güncel dosya yedeği ve kullanıcı onayıyla editörden çıkılabilir. Son tamamlanan kontroller 15 birim, 6 CLI ve 25 tarayıcı testidir. İnceleme raporundaki R01, R02 ve R04 kapandı; R03 ve diğer bekleyen maddeler bu rehberde tamamlanmış özellik olarak gösterilmez.
 
 ## İçindekiler
 
@@ -38,6 +40,8 @@ Mermaid şemaları GitHub gibi destekleyen Markdown görüntüleyicilerinde çiz
 | İçerik | Yazılar yerleşim öğelerinden ayrı `Article` kayıtlarıdır. | Başlık değişebilir; kutunun geometrisi ayrı tutulur. Uzayan metin yine taşma kontrolü gerektirir. |
 | Depo yapısı | Aynı Git deposunda uygulama ve taşınabilir skill klasörü | Ortak dosya sözleşmesi birlikte sürümlenir; skill klasörü tek başına dağıtılabilir. |
 | Kayıt | Tarayıcıda IndexedDB | Sunucu olmadan çok sayıda ayrı gazete tutulur; başka cihazda kendiliğinden görünmez. |
+| Gezinme | Gazete kimliği taşıyan hash rotaları | Haber bağlantısı son aktif gazete yerine belirli yerel çalışmayı açar. |
+| Hata sonrası devam | Dosya hatası ayrı, kayıt kurtarma ayrı akıştır. | Bozuk dosya yeni yüklemeyi engellemez; kayıtsız taslak güncel yedekle terk edilebilir. |
 | Taşıma | Düzenlenebilir HTML v1 veya `.rtai.zip` | Görseller de taşınır; Git klonlamak kişisel gazeteleri taşımaz. |
 | PDF | CSS baskı görünümü ve `window.print()` | Tarayıcının PDF olarak kaydet seçeneği kullanılır; uygulama bir PDF sunucusu içermez. |
 | Yayınlama | Şimdilik dosya indirme | ERP'ye yükleme veya otomatik publish yapılmaz. |
@@ -58,7 +62,8 @@ flowchart LR
   H --> V["Atölyede veri doğrulama"]
   V --> W["Çalışmalar ana sayfası"]
   W <--> D["IndexedDB proje ve Blob medya"]
-  W --> E["Elle düzenleme"]
+  W --> G["Workspace ve proje kapsamlı rota"]
+  G --> E["Elle düzenleme"]
   E --> R["Okuma önizlemesi"]
   E --> P["Baskı görünümü ve PDF"]
   E --> X["HTML veya ZIP dışa aktarma"]
@@ -68,7 +73,7 @@ flowchart LR
 
 **Üretici** ve **Atölye** aynı anda çalışmak zorunda değildir. Skill başka bir bilgisayarda HTML üretip dosyayı kullanıcıya verebilir. Atölye, üretim sırasında kullanılan Codex oturumunu bilmeden bu dosyayı açar. Atölyeden sonradan dışa aktarılan dosya da yeni bir skill revizyonuna giriş olabilir.
 
-Tarayıcı uygulamasında veri akışını `Workspace` başlatır. Editör açıldıktan sonra `App` bileşeni akışları bağlar; `useEditor` modeli değiştirir. `Paper` aynı sayfayı düzenleme, okuma ve baskı için çizer. Bağımsız HTML okuyucusu React kullanmaz; ortak model ve yerleşim mantığından üretilen ayrı bir çalışma betiği içerir.
+Tarayıcı uygulamasında `Workspace` çalışma açılışını, rota olaylarını ve proje geçişini yönetir. `routes.ts` adresi tipli rota nesnesine dönüştürür ve tekrar hash üretir. Editör açıldıktan sonra `App` sayfa/öğe işlemleri, otomatik kayıt ve kurtarma akışını bağlar; `useEditor` modeli değiştirir. Editör/okuma modu yerel bir ikinci görünüm bayrağı yerine üst bileşenden gelen rotadan türetilir. `Paper` aynı sayfayı düzenleme, okuma ve baskı için çizer. Bağımsız HTML okuyucusu React kullanmaz; ortak model ve yerleşim mantığından üretilen ayrı bir çalışma betiği içerir.
 
 ## Teknolojiler ve bağımlılıklar
 
@@ -95,8 +100,9 @@ Skill'in **kullanımı** npm paketlerine bağlı değildir. Skill çalışma dos
 rtai-newspaper-editor/
 ├── src/
 │   ├── main.tsx                     Uygulamayı başlatır
-│   ├── Workspace.tsx               Çalışmalar ve editöre geçiş
-│   ├── App.tsx                     Editör akışlarının bağlanması
+│   ├── Workspace.tsx               Çalışmalar, rota ve proje geçişi
+│   ├── routes.ts                   Hash çözümleme ve adres üretimi
+│   ├── App.tsx                     Editör, kayıt ve kurtarma akışları
 │   ├── model.ts                    Model, şablonlar ve geometri
 │   ├── validation.ts               Çalışma zamanı model doğrulaması
 │   ├── useEditor.ts                Mutasyon ve geri al/yinele
@@ -120,13 +126,25 @@ rtai-newspaper-editor/
 │       └── runtime/                Üretilmiş ortak JavaScript modülleri
 ├── .agents/skills/rtai-newspaper/    Bu depoda skill keşif girişi
 ├── scripts/                        Üretim, eşitleme ve doğrulama araçları
-├── tests/                          Tarayıcı testleri
+├── tests/                          Tarayıcı ve hata senaryoları
+│   └── recovery-routing.spec.ts    Proje bağlantısı ve yedekli çıkış
 ├── docs/                           Teknik ve kullanım belgeleri
 ├── .local/                         Git dışı gazeteler ve devam notları
 └── artifacts/                      Git dışı test ve PDF çıktıları
 ```
 
-Ana kaynaklar: [model](../src/model.ts), [editör](../src/useEditor.ts), [yerleşim](../src/layout.ts), [kayıt](../src/storage.ts), [HTML](../src/html-document.ts), [çalışma alanı](../src/Workspace.tsx).
+Ana kaynaklar: [model](../src/model.ts), [editör](../src/useEditor.ts), [yerleşim](../src/layout.ts), [kayıt](../src/storage.ts), [HTML](../src/html-document.ts), [çalışma alanı](../src/Workspace.tsx), [rota sözleşmesi](../src/routes.ts).
+
+| Koordinasyon sınırı | Mevcut görev |
+| --- | --- |
+| `Workspace` | Rota çözümleme sonucuna göre doğru projeyi açar; canlı proje değişiminden önce editörün kayıt işlevini bekler. |
+| `Boot` | Başlangıç Project, Blob haritası, kayıt izni ve açılış bildirimini editöre taşır. |
+| `EditorHandle.save()` | `useImperativeHandle` üzerinden editörün son taslağını geçişten önce kaydetme sınırıdır. |
+| `onNavigate` | Aynı projedeki editör/okuma/yazı/sayfa adresini ve rota durumunu birlikte değiştirir. |
+| `onOpen` | Editörden yeni sayı veya dosya açılınca yeni Boot'u Workspace'e verir; yeni proje kimliği editör oturumunu yeniler. |
+| `externalBusy` ve editörün işlem durumu | Proje açılışı veya export gibi işlem sırasında düzenleme kontrollerini engeller. |
+
+Depolama şeması veya HTML/ZIP biçimi bu rota güncellemesiyle değiştirilmemiştir: IndexedDB v2 ve proje/dosya sürümü 1 korunur. Harici router bağımlılığı eklenmemiştir.
 
 `App.tsx` halen önemli miktarda arayüz ve işlem koordinasyonu içerir. Modüller ayrılmış olsa da kapsam büyürken bu dosyanın sayfa işlemleri, medya işlemleri ve kayıt koordinasyonu açısından daha küçük parçalara ayrılması değerlendirilebilir.
 
@@ -307,11 +325,36 @@ sequenceDiagram
 
 Kuyruk kayıt işlemlerini sıraya koyar. Revizyon sayacı eski bir kaydın tamamlanmasını son değişiklik kaydedilmiş gibi göstermeyi önler. Başarılı kayıt sonrasında bekleyen medya girdileri temizlenir. Çalışmalar'a dönüşte, yeni sayı oluşturmadan veya editör içinden başka dosya açmadan önce `persistCurrent()` kuyruğu bekler ve son projeyi kaydeder.
 
+Hash veya tarayıcı geçmişi farklı projeye geçmeyi istediğinde Workspace `EditorHandle.save()` işlevini bekler. Kayıt başarısız olursa editör ve önceki rota korunur; son taslak sessizce başka projeyle değiştirilmez. `navigationVersion`, gecikmiş bir gezinme sonucunun daha yeni isteğin yerine ekrana yerleşmesini engellemek için kontrol edilir. Bu mekanizma çok sekmeli çatışma çözümü veya bütün storage işlemlerini tek kuyruğa alma altyapısı değildir.
+
 `saveProject()` proje, medya ve aktif işaretini tek readwrite transaction ile yazar. Bir hata transaction'ı iptal ederse önceki kalıcı kayıt korunur. Bu işlem IndexedDB transaction garantisidir; bilgisayarın fiziksel diskine anlık yazım garantisi veya harici yedek değildir. Kayıt beklerken, hatalıyken veya devre dışıyken `beforeunload` uyarısı istenir; kullanıcının uyarıyı yok saymasına karşı garanti vermez.
 
-Tarayıcı alanı `navigator.storage.estimate()` ile yaklaşık gösterilir. Uygulama sabit bir 10 GB kota tahsis etmez; limit ve verinin silinme koşulları tarayıcıya bağlıdır. Depolama kullanılamazsa geçici çalışma açılabilir ve HTML/ZIP indirilebilir. Bu durumda editörden ayrılma veri korumak için engellenebilir; indirme yerel kaydın yerini alacak yedektir.
+Tarayıcı alanı `navigator.storage.estimate()` ile yaklaşık gösterilir. Uygulama sabit bir 10 GB kota tahsis etmez; limit ve verinin silinme koşulları tarayıcıya bağlıdır. Depolama kullanılamazsa geçici çalışma açılabilir ve HTML/ZIP indirilebilir. Normal geçiş kayıt tamamlanana kadar durdurulur; kayıt olmadan ayrılma için aşağıdaki açık kurtarma akışı bulunur.
 
-Kayıt başarısız/geçici oturumda “Yedekle ve çık” güncel HTML/ZIP indirmesini başlatır. Kullanıcı dosyayı kaydettiğini onaylayınca eski yerel kaydı değiştirmeden Çalışmalar'a dönebilir. Başarısız export onayı açmaz; yedekten sonra model değişirse yeniden yedek gerekir. İşlem iptal edildiğinde taslak açık kalır. Dosya doğrulama hatası bu depolama kurtarma durumundan ayrıdır ve yeni dosya seçimini devre dışı bırakmaz.
+### Dosya hatası ile depolama hatasının ayrılması
+
+`WorkspaceHome` işlem hatası ile `storageUnavailable` durumunu ayrı değerlendirir. Geçersiz HTML/ZIP için hata gösterilir; yeni dosya, boş gazete ve şablon kontrolleri açık kalır. “Kaydetmeden gazete oluştur” yalnız depolama kullanılamayan durumda sunulur. Yerel kaydı yeniden deneme listeden kayıtları yükleyerek durumu yeniden değerlendirir. Editör açıkken başarısız bir bağlantı geçişi taslağı korur ve bildirim gösterir; ilk açılıştaki hatalı bağlantı ise Çalışmalar ekranında görünür.
+
+### Güncel yedekle çıkış
+
+```mermaid
+flowchart TD
+  A["Kayıt başarısız veya geçici oturum"] --> B["Yedekle ve çık penceresi"]
+  B --> C["Güncel HTML veya ZIP indir"]
+  C --> D{"Dışa aktarma başarılı mı?"}
+  D -->|Hayır| B
+  D -->|Evet| E["Dışa aktarılan proje durumunu işaretle"]
+  E --> F["Kullanıcı dosyayı kaydettiğini onaylar"]
+  F --> G{"Yedek hâlâ güncel mi?"}
+  G -->|Hayır| C
+  G -->|Evet| H["Önceki yerel kaydı koruyarak Çalışmalara dön"]
+  B --> I["İptal ve düzenlemeye dön"]
+  I --> J["Taslak açık kalır"]
+```
+
+“Yedekle ve çık” native dialog'u HTML/ZIP indirme, kaydetme onayı ve Çalışmalar'a dönüş kontrollerini içerir. Başarılı export, dışa aktarılan `Project` durumunu `backupProject` olarak işaretler. Güncellik `backupProject === project` ile denetlenir; bu kontrol dosya checksum'u veya diskteki dosyayı yeniden okuma değildir. Model değiştiğinde önceki yedekle çıkış etkin olmaz. Başarısız export yeni bir yedek işareti oluşturmaz.
+
+Kullanıcının “Yedek dosyasını kaydettim” onayı ve güncel yedek olmadan çıkış kapalıdır. İndirme API'si dosyanın gerçekten diske kaydedildiğini kanıtlamadığından onay ayrı tutulur. İptal taslağı açık bırakır. Onaylı çıkış önceki yerel kaydı değiştirmeden oturumu bırakır; bu kayıt son taslağın yerine geçmişteki sürümü içerebilir. Depolama hâlâ kullanılamıyorsa ana sayfada hata ve geçici çalışma seçeneği devam eder.
 
 Çalışmalar listesi son değişiklik zamanına göre sıralanır. Oluşturma, şablondan başlama, dosyadan ekleme, açma, ad değiştirme, arama, HTML indirme ve silme işlemleri bulunur. Silme proje ve onun medyasını kaldırır; çalışma alanında çöp kutusu yoktur. Gerekli dosya önce indirilmeli, silme kalıcı yerel işlem olarak değerlendirilmelidir.
 
@@ -472,6 +515,32 @@ Atölye okuyucusu açık `Project` durumunu gösterir; harici yayımlanmış hab
 
 Normal haber tıklaması tam sayfa gezinmesi yapmaz; varsayılan davranış durdurulur ve History API ile hash güncellenir. Okuma kaydırma konumu tutularak pencere kapanınca gazeteye dönüş sağlanır. Ctrl/Meta ile yeni sekme gibi değiştirilmiş tıklamalar ayrı tarayıcı davranışına bırakılır.
 
+### Rota çözümleme ve hata davranışı
+
+```mermaid
+flowchart TD
+  A["Adres veya geçmiş değişikliği"] --> B["parseRoute"]
+  B --> C["Gazete kimliği içeren rota"]
+  B --> D["Eski haber adresi"]
+  D --> E{"Tek proje eşleşiyor mu?"}
+  E -->|Evet| C
+  E -->|Hayır| F["Belirsiz veya eksik bağlantı hatası"]
+  B -->|Geçersiz biçim| F
+  C --> G{"Açık projeden ayrılmak gerekiyor mu?"}
+  G -->|Evet| H["Son taslağın kaydını bekle"]
+  H -->|Kayıt başarısız| F
+  H -->|Başarılı| I["İstenen projeyi kimliğiyle yükle"]
+  G -->|İlk açılış| I
+  G -->|Aynı proje| J["Görünümü ve adresi güncelle"]
+  I -->|Proje mevcut| J
+  I -->|Proje yok| F
+  F --> K["Açık editörü koru veya Çalışmalarda hata göster"]
+```
+
+`parseRoute()` hash'i doğrulanmış editör/okuma, ana sayfa, eski adres veya geçersiz adres olarak ayırır. `routeHash()` desteklenen yeni rota nesnelerinden adres üretir. Workspace `hashchange` ve `popstate` olaylarını izler. Aynı projede ekran değişimi editör modelini yeniden açmaz; farklı projeye geçiş son taslağın kaydını bekler. Editöre geri dönüş ve okuma sayfasına gezinme History API ile yönetilir; sayfa rotası Reader içinde ilgili bölüme kaydırılır.
+
+Reader'ın yazı listesi ve Paper hotspot'ları aynı proje kapsamlı adres üretimini kullanır. Yazı penceresindeki bağlantı kopyalama bu adresi taşır. Eski adres uyumluluğunda sıfır veya birden fazla yazı eşleşmesi hata üretir; son aktif gazete seçilerek tahmin yapılmaz. Eski yalnız-okuma adresi `#okuma` için mevcut/aktif çalışma uyumluluk davranışı devam eder.
+
 Atölyenin haber bağlantısı başka cihaz için yayın URL'si değildir. O cihazda ilgili proje yoksa hata gösterilir; başka aktif gazete açılmaz. Eski `#haber/<articleId>` yalnız bir yerel projeyle eşleştiğinde yeni proje kapsamlı adrese taşınır; birden çok eşleşmede kullanıcıdan doğru gazeteyi açması istenir. Eski `#okuma` aktif yerel projeye uyumluluk girişidir, yeni kopyalanan bağlantılar proje kimliği taşır. Bağımsız HTML'de yazılar aynı dosyanın içinde olduğundan `#haber/<articleId>` korunur. Henüz evrensel `/publication/issue/article` URL sözleşmesi yoktur.
 
 ## PDF ve baskı hattı
@@ -522,13 +591,18 @@ Mevcut uygulamada kimlik doğrulama ve kullanıcı izolasyonu yoktur. Aynı orig
 
 | Katman | Dosyalar | Kapsam |
 | --- | --- | --- |
-| Birim | `src/model.test.ts`, `layout.test.ts`, `html-document.test.ts` | JSON/model, içerik-geometri ayrımı, kolon hesabı, URL/şema, güvenli yerleşim, yakalama, sarma, HTML zarfı ve escape |
+| Birim | `src/model.test.ts`, `layout.test.ts`, `html-document.test.ts`, `routes.test.ts` | JSON/model, içerik-geometri ayrımı, kolon hesabı, URL/şema, yerleşim/sarma, HTML zarfı, proje kapsamlı adres ve eski/geçersiz rota ayrımı |
 | Node CLI | `scripts/newspaper.test.mjs`, `standalone.test.mjs` | Medyalı dosya, yol kaçışı, üzerine yazmama, revizyon, kimlik koruma ve kopyalanan skill'in uygulamasız çalışması |
 | Tarayıcı | `tests/editor.spec.ts` | Pointer/klavye, katmanlar, yerel kayıt, ZIP, haber penceresi, kota hatası, A3/A4 PDF |
 | Üretim | `tests/production.spec.ts` | Terminal dosyasını düzenleme, dokunulmayan sayfa, zoom/pan/panel, taşma, sarma, taslak yazı ve geçici kılavuzlar |
 | Çalışmalar | `tests/workspace.spec.ts` | Çoklu proje, medya izolasyonu, v1 geçişi, HTML import/export, kaynak betik çalıştırmama, wheel, çevrimdışı okuyucu, iframe ve bozuk görsel |
+| Rota ve kurtarma | `tests/recovery-routing.spec.ts` | Aynı yazı kimliğine sahip gazeteler, eski/eksik bağlantı, okuma ve geçmiş, canlı proje geçişinde kayıt, dosya hatasından devam, kota/geçici oturum ve yedekli çıkış |
 
-12 Ekim tarihli doğrulama kaydında üretim derlemesi başarılı, birim testleri **12/12**, CLI testleri **6/6**, tam tarayıcı takımı **19/19** geçmiştir. Son küçük kontrol değişikliğinden sonra ilgili dört tarayıcı senaryosu ayrıca **4/4** geçmiştir. Aynı kayıtta üç sayfalık A3 örneğin gerçek PDF ölçüsü ve bütün render sayfaları incelenmiştir. Bu sonuçlar [VALIDATION.md](VALIDATION.md) içinde tarihli kayıttır; bu rehber hazırlanırken takımlar yeniden çalıştırılmamıştır.
+**Son tamamlanan kod doğrulaması 13 Ekim 2026, `e9cf1be`:** `npm run build` başarılı; birim **15/15**, CLI **6/6**, tam tarayıcı takımı **25/25** geçti. Yeni üç birim ve altı tarayıcı senaryosu, önceki model/HTML/skill/kayıt/medya/PDF kontrollerine eklendi. Son tam tarayıcı çalışması yaklaşık 1.2 dakika sürdü. Test sunucusu güncel üretim derlemesini kullandı.
+
+Yeni testlerde tek eşleşen eski bağlantının taşınması, belirsiz bağlantının reddi, eksik projenin başka projeyle değiştirilmemesi, okuma/sayfa yenileme ve ileri/geri gezinme doğrulandı. Kota hatası kontrollü olarak medya yazısına enjekte edildi; güncel medya yedeği, önceki kaydın korunması, başarısız export, kullanıcı onayı, yedekten sonraki değişiklik ve kurtarma iptali kontrol edildi. IndexedDB tamamen erişilemezken geçici oturumdan yedekli çıkış da geçti. Bu senaryolar gerçek diski doldurma veya fiziksel disk yazımını doğrulama testi değildir.
+
+Tarihsel 12 Ekim kaydı **12/12 birim, 6/6 CLI, 19/19 tarayıcı** ve son dört senaryonun yeniden kontrolünü içerir. Üç sayfalık A3 örneğin gerçek PDF ölçüsü ve bütün render sayfaları o aşamada incelendi. Son rota düzeltmesinde mevcut A3/A4 otomatik PDF senaryoları tekrar geçti; yeni PDF sayfaları ayrıca elle render edilmedi. Tarihli ayrıntılar [VALIDATION.md](VALIDATION.md) içindedir. Bu Markdown güncellemesi için uygulama testleri tekrar çalıştırılmamıştır.
 
 ### Kullanıcıyla HTML yeniden açma testi
 
@@ -624,6 +698,19 @@ Küçük `feat:`, `fix:` ve `docs:` commit'leri kullanılır. Kod değişikliği
 - HTML biçimi düzenlenebilir veri zarfı gerektirir; genel HTML veya PDF içe aktarma desteklenmez.
 - Firefox/Safari, gerçek dokunmatik cihaz, ekran okuyucu, fiziksel yazıcı ve gerçek ERP ortamı ayrıca doğrulanmalıdır.
 - Türkçe birincil arayüzdür. Model adları İngilizcedir ve öğe etiketleri merkezi sözlüktedir; bütün UI metinleri henüz ayrı i18n kataloğunda değildir.
+
+### İnceleme bulgularının güncel durumu
+
+| Bulgu | Durum |
+| --- | --- |
+| R01 Haber bağlantısının proje bağlamı | Düzeltildi: gazete kimliği taşıyan adresler, eski adres ayrımı, doğru projeyle yenileme/geçmiş ve taslağı koruyan geçiş |
+| R02 Kayıtsız/geçici oturumdan güvenli ayrılma | Düzeltildi: güncel yedek, kullanıcı kaydetme onayı, iptal ve eski kaydı koruma |
+| R04 Dosya hatası sonrası yeni yükleme | Düzeltildi: dosya ve depolama hatası ayrı; yeni dosya doğrudan seçilebilir. |
+| R03 Seçili kutu ile Haber panelinin eşleşmesi | Bekliyor; seçim değişikliği aktif Article'ı otomatik eşitlemiyor. |
+| Diğer içerik ve düzenleme bulguları | Bağımsız metne geçiş, oluştur/bağla ayrımı, sürüm/kopya deneyimi, stil-geometri ayrımı, alan sınırları ve geçmiş gruplama bekliyor. |
+| Mimari ve ölçek bulguları | Medya temizliği, bozuk kayıt izolasyonu, ortak sunum/CLI, kayıt koordinasyonu, performans ve erişilebilirlik ayrıca ele alınacak. |
+
+Bu tablo bütün inceleme raporunun kapandığı anlamına gelmez. Ayrıntılı kaynak, etki ve kabul ölçütleri [iş akışı ve mimari raporunda](REVIEW-WORKFLOW-USABILITY-ARCHITECTURE.md) bulunur. Proje rotalarının üst bileşende toplanması bazı tekrarları azaltsa da tam persistence refactor'u ve çok sekme kontrolü yapılmamıştır.
 
 ### Değişiklikten sonra hızlı kontrol
 
