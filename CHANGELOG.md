@@ -1,5 +1,9 @@
 # Değişiklik kaydı
 
+## 13 Ekim 2026 · iş akışı ve mimari incelemesi
+
+- İş akışı, kullanılabilirlik, içerik mantığı ve mimari tekrarlar için 18 bulguluk rapor eklendi. Kod/UI kanıtı, öncelik, öneri ve kabul ölçütleri ayrıldı; bu incelemede uygulama kaynakları değiştirilmedi.
+
 ## 13 Ekim 2026 · teknik belge
 
 - Ayrıntılı teknik rehber: sistem mimarisi, veri modeli, editör/yerleşim, IndexedDB, medya, bağımsız skill, HTML/ZIP, okuma, PDF, güvenlik, testler ve ERP kararları; altı Mermaid şeması.

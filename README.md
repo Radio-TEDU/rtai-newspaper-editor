@@ -4,6 +4,8 @@ Tarayıcıda çalışan, Türkçe arayüzlü bağımsız gazete tasarım editör
 
 Ayrıntılı mimari, veri modeli, kayıt, bağımsız skill, HTML/PDF akışları ve test kapsamı için [teknik rehberi](docs/TECHNICAL-GUIDE.md) okuyun. Rehber Mermaid şemaları ve modül haritası içerir.
 
+İş akışındaki tutarsızlıklar, kullanılabilirlik ve mimari tekrarlar için [önceliklendirilmiş inceleme raporu](docs/REVIEW-WORKFLOW-USABILITY-ARCHITECTURE.md) bulunmaktadır. Bulgular ve öneriler, uygulanmış düzeltmelerden ayrı tutulur.
+
 ## Kurulum ve çalıştırma
 
 Node.js 22.12+ (bu çalışmada 24.19 kullanıldı) ve npm gerekir.
