@@ -28,7 +28,7 @@ Referans Grid/Flex ve bazı CSS metin kolonlarıyla içerik akışını kuruyor.
 
 Referansta `#sayfa-…`, `#haber-…`, `#yazi-…` rotaları ve native `dialog` var. Sayfa gezinmesi önceki/sonraki kontrolleriyle; “Rahat oku” modu sabit baskı yerleşimini daha akıcı, genişliği uyarlanan bir görünümle değiştiriyor. Kaynak bağlantısı ve yerel ayrıntı metni farklı görevler üstleniyor.
 
-Editör `#haber/<id>` ile kendi taslağındaki `Article` kaydını açar; harici yayımlanmış habere ihtiyaç duymaz. Yeni tıklama işleyicisi hash'i tam gezinme yapmadan değiştirir, kaydırma konumunu tutar; dialog kapatılınca gazeteye dönülür. Mevcut okuma görünümü baskı tuvalini ölçekleyerek gösterir; referanstaki bütün “Rahat oku” yeniden akış davranışları aynen taşınmadı. Tam yazı penceresi uzun içeriği okunabilir biçimde sunar.
+Editör `#haber/<projectId>/<articleId>` ile kendi taslağındaki `Article` kaydını açar; harici yayımlanmış habere ihtiyaç duymaz. Yeni tıklama işleyicisi hash'i tam gezinme yapmadan değiştirir, kaydırma konumunu tutar; dialog kapatılınca gazeteye dönülür. Mevcut okuma görünümü baskı tuvalini ölçekleyerek gösterir; referanstaki bütün “Rahat oku” yeniden akış davranışları aynen taşınmadı. Tam yazı penceresi uzun içeriği okunabilir biçimde sunar.
 
 ## Baskı ölçüsü ve araçların gizlenmesi
 

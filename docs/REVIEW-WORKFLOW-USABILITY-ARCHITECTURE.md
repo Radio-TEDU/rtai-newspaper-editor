@@ -4,7 +4,11 @@
 
 **İncelenen sürüm:** `3516c11`
 
-**Kapsam:** Mevcut uygulama ve bağımsız skill. Bu çalışma bulgu ve öneri kaydıdır; aşağıdaki düzeltmeler uygulanmadı.
+**Kapsam:** Uygulama ve bağımsız skill için ilk incelemenin bulgu ve öneri kaydı. Sonraki uygulama durumu aşağıda ayrı gösterilir.
+
+## Sonraki düzeltme durumu
+
+13 Ekim 2026 sonraki çalışma: **R01, R02 ve R04 düzeltildi.** Haber/okuma/sayfa adresleri proje kimliği taşıyor; yenileme, ileri/geri ve canlı proje geçişi son taslağı koruyor. Eski haber adresi yalnız tek eşleşmede taşınıyor; belirsiz/eksik bağlamda başka proje seçilmiyor. Dosya hatası ile depolama hatası ayrıldı. Kayıt yapılamayan oturumda güncel yedeği indirip kaydettiğini onaylayan kullanıcı eski kaydı bozmadan Çalışmalar'a dönebiliyor; eski veya başarısız yedek yeterli sayılmıyor. 15 birim, 6 CLI, 25 tarayıcı testi geçti. Aşağıdaki bulgular ilk incelemenin tarihsel kaydıdır; diğer maddeler bu çalışmada tamamlandı sayılmamalı. Özellikle **R03 Haber paneli bağlamı** sıradaki bağımsız düzeltmedir.
 
 Üretim → Atölyeye yükleme → elle düzenleme → HTML yeniden açma → PDF akışı çalışıyor ve önceki kontroller geçti. Buna rağmen çoklu gazetede doğru bağlamı koruma, hata sonrası devam edebilme, metnin içerik kaynağı ve aynı dosyanın revizyonlarını yönetme açısından düzeltilmesi gereken noktalar var. Mimariyi yeniden kurmak gerekmiyor; önce kullanıcıya görünen tutarsızlıklar, ardından ortak iş kuralları ele alınmalı.
 

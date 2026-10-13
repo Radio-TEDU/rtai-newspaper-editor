@@ -15,6 +15,7 @@ interface PaperProps {
     onChange?: (id: string, patch: Partial<DesignElement>) => DesignElement | undefined;
     onFinish?: () => void;
     onOpenArticle?: (id: string) => void;
+    articleHref?: (id: string) => string;
 }
 function TextContent({ element: e, project, page }: { element: DesignElement; project: Project; page?: NewspaperPage }) {
     const ref = useRef<HTMLSpanElement>(null);
@@ -45,7 +46,7 @@ export function ElementContent({ element: e, project, urls }: {
     return <TextContent element={e} project={project}/>;
 }
 export function elementStyle(e: DesignElement): CSSProperties { return { left: e.x, top: e.y, width: e.width, height: e.height, fontSize: e.fontSize, fontFamily: e.fontFamily === 'serif' ? 'Georgia, "Times New Roman", serif' : 'Arial, sans-serif', fontWeight: e.fontWeight, lineHeight: e.lineHeight, color: e.color, background: e.background, textAlign: e.align, border: e.borderWidth + 'px solid ' + e.borderColor }; }
-export default function Paper({ project, page, urls, scale = 1, selectedId, guides, snap, editable, onSelect, onStart, onChange, onFinish, onOpenArticle }: PaperProps) {
+export default function Paper({ project, page, urls, scale = 1, selectedId, guides, snap, editable, onSelect, onStart, onChange, onFinish, onOpenArticle, articleHref }: PaperProps) {
     const height = pageHeight(project);
     const gesture = useRef<{
         id: string;
@@ -111,7 +112,7 @@ export default function Paper({ project, page, urls, scale = 1, selectedId, guid
     {guides && <div className="column-guides" aria-hidden="true">{columnRects(page).map((c, i) => <div key={i} style={{ left: c.x, width: c.width, top: page.margin, bottom: page.margin }}><span>{i + 1}</span></div>)}</div>}
     {page.elements.filter(e => !e.hidden).map(e => <div key={e.id} className={'design-element ' + e.kind + (selectedId === e.id && editable ? ' selected' : '') + (e.locked ? ' locked' : '')} style={elementStyle(e)} data-element-id={e.id} tabIndex={editable ? 0 : undefined} role={editable ? 'button' : undefined} aria-label={editable ? e.name + (e.locked ? ' · kilitli' : '') : undefined} aria-pressed={editable ? selectedId === e.id : undefined} onClick={event => { event.stopPropagation(); onSelect?.(e.id); }} onFocus={() => editable && onSelect?.(e.id)} onPointerDown={event => down(event, e)} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}>
       {e.kind === 'image' || e.kind === 'shape' ? <ElementContent element={e} project={project} urls={urls}/> : <TextContent element={e} project={project} page={page}/>}
-      {!editable && e.articleId && <a className="article-hotspot" href={'#haber/' + encodeURIComponent(e.articleId)} onClick={event => { if (onOpenArticle && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); onOpenArticle(e.articleId!); } }} aria-label={elementText(e, project.articles) + ' · Haberi oku'}><span>Haberi oku ↗</span></a>}
+      {!editable && e.articleId && <a className="article-hotspot" href={articleHref ? articleHref(e.articleId) : '#haber/' + encodeURIComponent(e.articleId)} onClick={event => { if (onOpenArticle && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); onOpenArticle(e.articleId!); } }} aria-label={elementText(e, project.articles) + ' · Haberi oku'}><span>Haberi oku ↗</span></a>}
       {editable && selectedId === e.id && !e.locked && ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(handle => <span key={handle} className={'resize-handle ' + handle} role="presentation" onPointerDown={event => down(event, e, handle)} onPointerMove={move} onPointerUp={finish} onPointerCancel={finish}/>)}
     </div>)}
     {editable && dragging && smartGuides.map((g, i) => <div key={i} aria-hidden="true" className={'smart-guide ' + g.axis} style={g.axis === 'x' ? { left: g.value } : { top: g.value }}/>) }

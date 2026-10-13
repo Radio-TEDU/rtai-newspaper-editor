@@ -20,3 +20,5 @@
 .check-field input{flex:none;margin-top:3px}
 @media(max-width:800px){.editor-layout.panels-hidden{display:flex}.header-actions button{padding:9px 6px;gap:5px}.header-actions button[aria-controls] span{display:none}.zoom-controls{gap:3px}.zoom-controls button{padding:7px}.canvas-footer>span{max-width:95px}.panels-hidden .canvas-region{height:calc(100dvh - 130px);min-height:550px}}
 @media print{.smart-guide{display:none!important}.flow-line{overflow:visible}}
+
+.save-recovery-banner{position:fixed;bottom:85px;right:20px;z-index:110;max-width:calc(100% - 40px);padding:12px;background:#fff4df;border:1px solid #e4cda2;border-radius:8px;display:flex;gap:12px;align-items:center;font-size:12px}.recovery-dialog h2{font:28px Georgia,serif;margin-bottom:15px}.recovery-dialog p{line-height:1.6;margin-bottom:20px}.recovery-dialog .check-field{margin:20px 0}.recovery-dialog .button-row{flex-wrap:wrap}@media print{.save-recovery-banner,.recovery-dialog{display:none!important}}

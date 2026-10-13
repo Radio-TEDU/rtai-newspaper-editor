@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type RefObject } from 'react';
 import { Newspaper, Plus, Eye, Printer, Download, Upload, Undo2, Redo2, ChevronUp, ChevronDown, Copy, Trash2, ZoomIn, ZoomOut, Maximize2, Type, Heading1, AlignLeft, Quote, ImagePlus, Minus, Layers, Settings2, FileText, Check, Grid2X2, LockKeyhole, EyeOff, Link2, X, Hand, PanelLeft, Home } from 'lucide-react';
 import { makeProject, makePage, makeElement, uid, pageHeight, clampRect, kindLabels, elementText, type Project, type ElementKind, type Article } from './model';
 import { useEditor } from './useEditor';
@@ -11,22 +11,28 @@ import Reader from './components/Reader';
 import PrintView from './components/PrintView';
 import { placeSafely, layoutText, measureTextFor, isText } from './layout';
 import { useCanvasNavigation } from './useCanvasNavigation';
+import type { ProjectRoute } from './routes';
 export interface Boot {
     project: Project;
     media: Map<string, Blob>;
     error?: string;
     saveEnabled: boolean;
 }
-export default function Editor({ initial, onHome }: { initial: Boot; onHome: () => void }) {
+export interface EditorHandle { save: () => Promise<void> }
+export default function Editor({ initial, onHome, onOpen, route, onNavigate, leaveRef, navigationError, externalBusy }: {
+    initial: Boot; onHome: () => void; onOpen: (next: Boot) => void; route: ProjectRoute;
+    onNavigate: (next: ProjectRoute, replace?: boolean) => void;
+    leaveRef: RefObject<EditorHandle | null>; navigationError: string; externalBusy: boolean;
+}) {
     const editor = useEditor(initial.project);
     const { project, page, selected, selectedId, setSelectedId, mutate, updatePage, updateElement } = editor;
     const [media] = useState(initial.media);
     const [urls, setUrls] = useState<Record<string, string>>({});
     const [notice, setNotice] = useState(initial.error ?? '');
     const [saving, setSaving] = useState(initial.saveEnabled ? 'pending' : 'disabled');
-    const [saveEnabled, setSaveEnabled] = useState(initial.saveEnabled);
-    const [preview, setPreview] = useState(location.hash.startsWith('#haber/'));
-    const [articleId, setArticleId] = useState<string>();
+    const saveEnabled = initial.saveEnabled;
+    const preview = route.kind === 'read';
+    const articleId = route.articleId;
     const [zoom, setZoom] = useState(0.55);
     const [guides, setGuides] = useState(false);
     const [snap, setSnap] = useState(true);
@@ -34,7 +40,13 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
     const [panelsHidden, setPanelsHidden] = useState(false);
     const [rightTab, setRightTab] = useState<'properties' | 'layers' | 'articles'>('properties');
     const [activeArticle, setActiveArticle] = useState<string>(project.articles[0]?.id ?? '');
-    const [busy, setBusy] = useState(false);
+    const [working, setBusy] = useState(false);
+    const busy = working || externalBusy;
+    const [recoveryOpen, setRecoveryOpen] = useState(false);
+    const [backupProject, setBackupProject] = useState<Project>();
+    const [backupConfirmed, setBackupConfirmed] = useState(false);
+    const recoveryDialog = useRef<HTMLDialogElement>(null);
+    const hasCurrentBackup = backupProject === project;
     const [storageUsage, setStorageUsage] = useState('');
     const imageInput = useRef<HTMLInputElement>(null);
     const importInput = useRef<HTMLInputElement>(null);
@@ -42,7 +54,6 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
     const readerScroll = useRef(0);
     const [wheelZoom, setWheelZoom] = useState(() => { try { return localStorage.getItem('rtai-wheel-zoom') !== 'false'; } catch { return true; } });
     useEffect(() => { try { localStorage.setItem('rtai-wheel-zoom', String(wheelZoom)); } catch {} }, [wheelZoom]);
-    useEffect(() => { if (!preview) history.replaceState(null, '', '#duzenle/' + project.id); }, [project.id, preview]);
     const navigation = useCanvasNavigation(workspace, zoom, setZoom, preview, panMode, wheelZoom);
     const imageTarget = useRef<string | undefined>(undefined);
     const pendingMedia = useRef(new Map<string, Blob>());
@@ -51,6 +62,9 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
     const savePermission = useRef(saveEnabled);
     savePermission.current = saveEnabled;
     const urlRegistry = useRef(urls);
+    useImperativeHandle(leaveRef, () => ({ save: persistCurrent }));
+    useEffect(() => { if (navigationError) setNotice(navigationError); }, [navigationError]);
+    useEffect(() => { if (recoveryOpen) recoveryDialog.current?.showModal(); else recoveryDialog.current?.close(); }, [recoveryOpen]);
     useEffect(() => { if (editor.layoutError) setNotice(editor.layoutError); }, [editor.layoutError]);
     urlRegistry.current = urls;
     useEffect(() => { const next = Object.fromEntries([...media].map(([id, blob]) => [id, URL.createObjectURL(blob)])); urlRegistry.current = next; setUrls(next); return () => { for (const url of Object.values(urlRegistry.current))
@@ -67,14 +81,9 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
         event.preventDefault();
     } }; window.addEventListener('beforeunload', handler); return () => window.removeEventListener('beforeunload', handler); }, [saving]);
     useEffect(() => { navigator.storage?.estimate().then(v => setStorageUsage('Yerel alan: ' + Math.round((v.usage ?? 0) / 1024 / 1024) + ' MB / ' + Math.round((v.quota ?? 0) / 1024 / 1024) + ' MB')).catch(() => setStorageUsage('Yerel alan bilgisi alınamadı.')); }, [project.updatedAt]);
-    useEffect(() => { const route = () => { let id: string | undefined; try {
-        if (location.hash.startsWith('#haber/'))
-            id = decodeURIComponent(location.hash.slice(7));
-    }
-    catch { } setArticleId(id); if (id)
-        setPreview(true); }; route(); window.addEventListener('hashchange', route); window.addEventListener('popstate', route); return () => { window.removeEventListener('hashchange', route); window.removeEventListener('popstate', route); }; }, []);
-    function clearArticle() { history.replaceState(null, '', location.pathname + location.search + '#okuma'); setArticleId(undefined); }
-    function openArticle(id: string) { history.pushState(null, '', '#haber/' + encodeURIComponent(id)); setArticleId(id); setPreview(true); }
+    function showReader(replace = false) { onNavigate({ kind: 'read', projectId: project.id, pageId: route.pageId }, replace); }
+    function clearArticle() { showReader(true); }
+    function openArticle(id: string) { onNavigate({ kind: 'read', projectId: project.id, articleId: id }); }
     function editArticle(id: string, patch: Partial<Article>) { mutate(p => { const a = p.articles.find(a => a.id === id); if (a)
         Object.assign(a, patch); }); }
     function add(kind: ElementKind) { if (page.elements.length >= 500) { setNotice('Bir sayfaya en fazla 500 öğe ekleyebilirsiniz.'); return; } const element = placeSafely(makeElement(kind, { x: page.margin, y: Math.min(300, pageHeight(project) - 300) }), page, pageHeight(project)); if (!element) { setNotice('Bu öğe için boş alan yok. Yeni sayfa ekleyin veya serbest düzeni seçin.'); return; } updatePage(p => p.elements.push(element)); setSelectedId(element.id); setRightTab('properties'); }
@@ -151,6 +160,7 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
     }
     async function exportProject(html = false) { setBusy(true); try {
         if (html) await exportHtml(project, media); else await exportPackage(project, media);
+        setBackupProject(project); setBackupConfirmed(false);
         setNotice(html ? 'Düzenlenebilir HTML indirildi.' : 'Metinler ve görseller proje paketi olarak indirildi.');
     }
     catch (err) {
@@ -160,20 +170,13 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
         setBusy(false);
     } }
     async function persistCurrent() {
-        if (!savePermission.current) throw new Error('Kaydetmeden çalışıyorsunuz. Önce HTML veya paket indirin; yerel kayıt düzelene kadar açık çalışma korunuyor.');
+        if (!savePermission.current) throw new Error('Kaydetmeden çalışıyorsunuz. HTML veya paket indirin; ardından “Yedekle ve çık” ile dosyanızı kaydettiğinizi onaylayın.');
         revision.current++; await saveQueue.current.catch(() => {});
         const active = new Set(assetIds(project));
         await saveProject(project, new Map([...media].filter(([id]) => active.has(id))));
         setSaving('saved');
     }
-    function resetMedia(next: Map<string, Blob>) {
-        for (const url of Object.values(urlRegistry.current)) URL.revokeObjectURL(url);
-        media.clear(); pendingMedia.current.clear();
-        const urls = Object.create(null) as Record<string, string>;
-        for (const [id, blob] of next) { media.set(id, blob); urls[id] = URL.createObjectURL(blob); }
-        urlRegistry.current = urls; setUrls(urls);
-    }
-    async function goHome() { setBusy(true); try { await persistCurrent(); onHome(); } catch (err) { setNotice(storageError(err)); } finally { setBusy(false); } }
+    async function goHome() { setBusy(true); try { await persistCurrent(); onHome(); } catch (err) { setNotice(storageError(err)); setRecoveryOpen(true); } finally { setBusy(false); } }
     async function importProject(file: File) {
         setBusy(true);
         try {
@@ -181,14 +184,13 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
             await persistCurrent();
             imported.project.id = uid(); imported.project.updatedAt = new Date().toISOString();
             await saveProject(imported.project, imported.media);
-            resetMedia(imported.media); editor.replace(imported.project);
-            setActiveArticle(imported.project.articles[0]?.id ?? ''); setNotice('Proje ve bütün görseller açıldı.');
+            onOpen({ ...imported, saveEnabled: true, error: 'Proje ve bütün görseller açıldı.' });
         } catch (err) { setNotice(err instanceof Error ? err.message : 'Gazete açılamadı.'); }
         finally { setBusy(false); }
     }
     async function newIssue(template: boolean) {
         setBusy(true);
-        try { await persistCurrent(); const next = makeProject(template); await saveProject(next); resetMedia(new Map()); setSaveEnabled(true); editor.replace(next); setActiveArticle(next.articles[0]?.id ?? ''); setNotice('Yeni sayı açıldı. Önceki gazeteniz Çalışmalar’da korunuyor.'); }
+        try { await persistCurrent(); const next = makeProject(template); await saveProject(next); onOpen({ project: next, media: new Map(), saveEnabled: true, error: 'Yeni sayı açıldı. Önceki gazeteniz Çalışmalar’da korunuyor.' }); }
         catch (err) { setNotice(storageError(err)); } finally { setBusy(false); }
     }
     async function printIssue() { setBusy(true); try {
@@ -264,8 +266,9 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
     const active = project.articles.find(a => a.id === activeArticle) ?? project.articles[0];
     const index = project.pages.findIndex(p => p.id === page.id);
     return <><div className="application" aria-busy={busy}>
-    {preview ? <Reader project={project} urls={urls} articleId={articleId} onCloseArticle={clearArticle} onOpenArticle={openArticle} scrollPosition={readerScroll} onBack={() => { clearArticle(); setPreview(false); }} onPrint={printIssue} onMessage={setNotice}/> : <>
-    <header className="app-header"><a className="brand" href="#" onClick={e => e.preventDefault()}><span className="brand-symbol"><Newspaper size={22}/></span><div><strong>RTAI<span> / </span>Atölye</strong><small>GAZETE TASARIM EDİTÖRÜ</small></div></a><div className="project-title"><input disabled={busy} aria-label="Gazete adı" maxLength={200} value={project.name} onChange={e => mutate(p => { p.name = e.target.value; })}/><span className={'save-state ' + saving} role="status">{saving === 'saved' ? <Check size={12}/> : null}{saving === 'saved' ? 'Yerel olarak kaydedildi' : saving === 'pending' ? 'Kaydediliyor…' : saving === 'disabled' ? 'Yerel kayıt kapalı' : 'Kayıt yapılamadı'}</span></div><div className="header-actions"><button disabled={busy} onClick={() => { void goHome(); }}><Home size={16}/>Çalışmalar</button><button aria-label={panelsHidden ? "Panelleri göster" : "Panelleri gizle"} aria-expanded={!panelsHidden} aria-controls="left-panel right-panel" onClick={() => setPanelsHidden(v => !v)}><PanelLeft size={16}/><span>Paneller</span></button><button onClick={() => setPreview(true)} disabled={busy}><Eye size={16}/> Okuma önizlemesi</button><button className="primary" onClick={printIssue} disabled={busy}><Printer size={16}/> PDF / Yazdır</button></div></header>
+    {(saving === 'error' || saving === 'disabled') && <div className="save-recovery-banner" role="status"><span>Çalışmanız bu oturumda açık; yerel kayıt tamamlanmadı.</span><button disabled={busy} onClick={() => setRecoveryOpen(true)}>Yedekle ve çık</button></div>}
+    {preview ? <Reader project={project} urls={urls} articleId={articleId} pageId={route.pageId} onOpenPage={id => onNavigate({ kind: 'read', projectId: project.id, pageId: id })} onCloseArticle={clearArticle} onOpenArticle={openArticle} scrollPosition={readerScroll} onBack={() => onNavigate({ kind: 'edit', projectId: project.id })} onPrint={printIssue} onMessage={setNotice}/> : <>
+    <header className="app-header"><a className="brand" href="#" onClick={e => e.preventDefault()}><span className="brand-symbol"><Newspaper size={22}/></span><div><strong>RTAI<span> / </span>Atölye</strong><small>GAZETE TASARIM EDİTÖRÜ</small></div></a><div className="project-title"><input disabled={busy} aria-label="Gazete adı" maxLength={200} value={project.name} onChange={e => mutate(p => { p.name = e.target.value; })}/><span className={'save-state ' + saving} role="status">{saving === 'saved' ? <Check size={12}/> : null}{saving === 'saved' ? 'Yerel olarak kaydedildi' : saving === 'pending' ? 'Kaydediliyor…' : saving === 'disabled' ? 'Yerel kayıt kapalı' : 'Kayıt yapılamadı'}</span></div><div className="header-actions"><button disabled={busy} onClick={() => { void goHome(); }}><Home size={16}/>Çalışmalar</button><button aria-label={panelsHidden ? "Panelleri göster" : "Panelleri gizle"} aria-expanded={!panelsHidden} aria-controls="left-panel right-panel" onClick={() => setPanelsHidden(v => !v)}><PanelLeft size={16}/><span>Paneller</span></button><button onClick={() => showReader()} disabled={busy}><Eye size={16}/> Okuma önizlemesi</button><button className="primary" onClick={printIssue} disabled={busy}><Printer size={16}/> PDF / Yazdır</button></div></header>
     <div className={"editor-layout" + (panelsHidden ? " panels-hidden" : "")} inert={busy}><aside id="left-panel" className="left-panel" hidden={panelsHidden}><section className="page-section"><div className="section-title"><h2>Sayfalar <span>{project.pages.length}</span></h2><button title="Boş sayfa ekle" aria-label="Boş sayfa ekle" onClick={() => addPage()} disabled={busy || project.pages.length >= 100}><Plus size={17}/></button></div><div className="page-list">{project.pages.map((p, i) => <button className={'page-item ' + (p.id === page.id ? 'active' : '')} key={p.id} onClick={() => { editor.setPageId(p.id); setSelectedId(undefined); }}><span className="mini-paper"><span className="mini-masthead"/>{p.elements.filter(e => !e.hidden).slice(0, 22).map(e => <i key={e.id} style={{ left: e.x / 10 + '%', top: e.y / pageHeight(project) * 100 + '%', width: e.width / 10 + '%', height: e.height / pageHeight(project) * 100 + '%', background: e.kind === 'image' ? '#b5c5b9' : e.kind === 'shape' ? e.background : '#d4d2c8' }}/>)}</span><span className="page-item-text"><b>{String(i + 1).padStart(2, '0')}</b><span>{p.name}</span><small>{p.elements.length} öğe</small></span></button>)}</div><div className="page-actions"><button aria-label="Sayfayı yukarı taşı" title="Sayfayı yukarı taşı" disabled={index === 0} onClick={() => movePage(-1)}><ChevronUp size={16}/></button><button aria-label="Sayfayı aşağı taşı" title="Sayfayı aşağı taşı" disabled={index === project.pages.length - 1} onClick={() => movePage(1)}><ChevronDown size={16}/></button><button aria-label="Sayfayı çoğalt" title="Sayfayı çoğalt" onClick={duplicatePage}><Copy size={15}/></button><button aria-label="Sayfayı sil" title="Sayfayı sil" disabled={project.pages.length === 1} onClick={deletePage}><Trash2 size={15}/></button></div><button className="text-button" onClick={() => addPage(true)}><Plus size={13}/> Şablondan sayfa ekle</button></section>
     <section className="add-section"><span className="eyebrow">SAYFANIZI OLUŞTURUN</span><h2>Öğe ekle</h2><div className="element-tools">{(['headline', 'deck', 'body', 'text', 'quote', 'section', 'caption', 'shape'] as ElementKind[]).map(kind => { const Icon = kind === 'headline' ? Heading1 : kind === 'quote' ? Quote : kind === 'shape' ? Minus : kind === 'body' ? AlignLeft : Type; return <button key={kind} onClick={() => add(kind)} disabled={busy || page.elements.length >= 500}><Icon size={18}/><span>{kindLabels[kind]}</span></button>; })}<button className="image-add" onClick={() => { imageTarget.current = undefined; imageInput.current?.click(); }} disabled={busy}><ImagePlus size={19}/><span>Görsel yükle</span><Plus size={14}/></button></div></section>
     <section className="project-section"><h2>Proje dosyası</h2><button onClick={() => { void exportProject(); }} disabled={busy}><Download size={15}/> Paketi indir</button><button onClick={() => { void exportProject(true); }}><Download size={15}/>HTML indir</button><button onClick={() => importInput.current?.click()} disabled={busy}><Upload size={15}/> Paket aç</button><div className="new-project-actions"><button className="text-button" onClick={() => newIssue(false)} disabled={busy}>Boş sayı</button><button className="text-button" onClick={() => newIssue(true)} disabled={busy}>Şablonlu sayı</button></div><p>Çalışmanız bu tarayıcıda saklanır.<br />Paket indirerek yedeğinizi alın.</p></section><div className="left-footer"><span className="status-dot"/> Bağımsız & yerel<span>v0.1</span></div></aside>
@@ -280,6 +283,13 @@ export default function Editor({ initial, onHome }: { initial: Boot; onHome: () 
     <input ref={imageInput} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file)
         void uploadImage(file); }}/><input ref={importInput} type="file" accept=".zip,.rtai.zip,.html,.htm" hidden onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file)
         void importProject(file); }}/>
+    <dialog ref={recoveryDialog} className="article-dialog recovery-dialog" aria-labelledby="recovery-title" onCancel={event => { event.preventDefault(); setRecoveryOpen(false); }}>
+      <h2 id="recovery-title">Çalışmanı yedekle ve çık</h2>
+      <p>Yerel kayıt tamamlanamadı. Önce güncel HTML veya ZIP yedeğini indir. İndirme başlatmak dosyanın diske kaydedildiğini doğrulamaz; dosyanı kaydettiğini onayladıktan sonra Çalışmalar’a dönebilirsin. Önceki yerel kayıt değiştirilmez.</p>
+      <div className="button-row"><button disabled={busy} onClick={() => { void exportProject(true); }}>HTML yedeği indir</button><button disabled={busy} onClick={() => { void exportProject(false); }}>ZIP yedeği indir</button></div>
+      <label className="check-field"><input type="checkbox" disabled={!hasCurrentBackup || busy} checked={hasCurrentBackup && backupConfirmed} onChange={event => setBackupConfirmed(event.target.checked)}/>Yedek dosyasını kaydettim</label>
+      <div className="button-row"><button disabled={busy} onClick={() => setRecoveryOpen(false)}>Düzenlemeye dön</button><button disabled={busy || !hasCurrentBackup || !backupConfirmed} onClick={() => { setRecoveryOpen(false); onHome(); }}>Yedeğimle Çalışmalar’a dön</button></div>
+    </dialog>
     {notice && <div className="notice" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Bildirimi kapat"><X size={16}/></button></div>}{busy && <div className="busy-label" role="status">İşlem sürüyor…</div>}
     </div><PrintView project={project} urls={urls}/></>;
 }

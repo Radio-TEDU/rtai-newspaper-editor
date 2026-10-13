@@ -1,5 +1,12 @@
 # Değişiklik kaydı
 
+## 13 Ekim 2026 · haber bağlantıları ve hata sonrası devam
+
+- Haber, okuma ve sayfa hash'lerinde gazete kimliği; doğru projeyle yenileme/geçmiş, canlı proje geçişinde son taslağı kaydetme ve belirsiz eski linkte tahmin yapmama.
+- Dosya doğrulama ve depolama hatalarını ayırma; bozuk dosyadan sonra doğrudan yeniden yükleme.
+- Kayıtsız/kota hatalı oturumda güncel HTML/ZIP yedeği ve dosya kaydetme onayıyla çıkış; başarısız/eski yedekte engel, iptalde taslağı koruma.
+- 15 birim, 6 CLI ve 25 tarayıcı kontrolü geçti; R01/R02/R04 kapandı.
+
 ## 13 Ekim 2026 · iş akışı ve mimari incelemesi
 
 - İş akışı, kullanılabilirlik, içerik mantığı ve mimari tekrarlar için 18 bulguluk rapor eklendi. Kod/UI kanıtı, öncelik, öneri ve kabul ölçütleri ayrıldı; bu incelemede uygulama kaynakları değiştirilmedi.

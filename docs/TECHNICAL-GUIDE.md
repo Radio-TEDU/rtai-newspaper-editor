@@ -311,6 +311,8 @@ Kuyruk kayıt işlemlerini sıraya koyar. Revizyon sayacı eski bir kaydın tama
 
 Tarayıcı alanı `navigator.storage.estimate()` ile yaklaşık gösterilir. Uygulama sabit bir 10 GB kota tahsis etmez; limit ve verinin silinme koşulları tarayıcıya bağlıdır. Depolama kullanılamazsa geçici çalışma açılabilir ve HTML/ZIP indirilebilir. Bu durumda editörden ayrılma veri korumak için engellenebilir; indirme yerel kaydın yerini alacak yedektir.
 
+Kayıt başarısız/geçici oturumda “Yedekle ve çık” güncel HTML/ZIP indirmesini başlatır. Kullanıcı dosyayı kaydettiğini onaylayınca eski yerel kaydı değiştirmeden Çalışmalar'a dönebilir. Başarısız export onayı açmaz; yedekten sonra model değişirse yeniden yedek gerekir. İşlem iptal edildiğinde taslak açık kalır. Dosya doğrulama hatası bu depolama kurtarma durumundan ayrıdır ve yeni dosya seçimini devre dışı bırakmaz.
+
 Çalışmalar listesi son değişiklik zamanına göre sıralanır. Oluşturma, şablondan başlama, dosyadan ekleme, açma, ad değiştirme, arama, HTML indirme ve silme işlemleri bulunur. Silme proje ve onun medyasını kaldırır; çalışma alanında çöp kutusu yoktur. Gerekli dosya önce indirilmeli, silme kalıcı yerel işlem olarak değerlendirilmelidir.
 
 Kayıt **origin ve tarayıcı profiline** bağlıdır. `http://127.0.0.1:5173` ile `http://127.0.0.1:4173` aynı veri alanı değildir. Aynı origin'deki farklı URL yolları veri alanını paylaşabilir. Iframe kullanımı ayrıca tarayıcının bölümlenmiş/üçüncü taraf depolama politikalarından etkilenebilir. ERP hesabına göre ayrım ve çok sekmeli çatışma çözümü yoktur.
@@ -464,13 +466,13 @@ Atölye okuyucusu açık `Project` durumunu gösterir; harici yayımlanmış hab
 | --- | --- |
 | `#calismalar` | Çalışma alanı |
 | `#duzenle/<projectId>` | Aynı tarayıcı depolamasındaki belirli çalışma |
-| `#okuma` | Aktif yerel çalışmanın okuma akışı |
-| `#haber/<articleId>` | Açık/aktif projenin yazısı; tek başına proje kimliği taşımaz. |
-| `#okuma-sayfa-<pageId>` | Okuma sayfasına gezinme |
+| `#okuma/<projectId>` | Belirli yerel çalışmanın okuma akışı; yenileme ve geçmişte korunur. |
+| `#haber/<projectId>/<articleId>` | Yazıyı doğru projede açar; aktif gazete işareti kullanılmaz. |
+| `#okuma/<projectId>/sayfa/<pageId>` | Belirli gazetenin okuma sayfasına gezinme |
 
 Normal haber tıklaması tam sayfa gezinmesi yapmaz; varsayılan davranış durdurulur ve History API ile hash güncellenir. Okuma kaydırma konumu tutularak pencere kapanınca gazeteye dönüş sağlanır. Ctrl/Meta ile yeni sekme gibi değiştirilmiş tıklamalar ayrı tarayıcı davranışına bırakılır.
 
-Atölyenin haber bağlantısı başka cihaz için yayın URL'si değildir. O cihazda ilgili proje yoksa bağlantı aynı yazıyı bulamaz; çoklu projede aktif çalışma bağlamı da önemlidir. Bağımsız HTML'de ise yazılar aynı dosyanın içinde olduğundan dosya ve hash birlikte kullanılabilir. Henüz evrensel `/publication/issue/article` URL sözleşmesi yoktur.
+Atölyenin haber bağlantısı başka cihaz için yayın URL'si değildir. O cihazda ilgili proje yoksa hata gösterilir; başka aktif gazete açılmaz. Eski `#haber/<articleId>` yalnız bir yerel projeyle eşleştiğinde yeni proje kapsamlı adrese taşınır; birden çok eşleşmede kullanıcıdan doğru gazeteyi açması istenir. Eski `#okuma` aktif yerel projeye uyumluluk girişidir, yeni kopyalanan bağlantılar proje kimliği taşır. Bağımsız HTML'de yazılar aynı dosyanın içinde olduğundan `#haber/<articleId>` korunur. Henüz evrensel `/publication/issue/article` URL sözleşmesi yoktur.
 
 ## PDF ve baskı hattı
 

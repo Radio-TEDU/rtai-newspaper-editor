@@ -2,10 +2,13 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { ArrowLeft, X, ExternalLink, Link2 } from 'lucide-react';
 import { safeUrl, type Project } from '../model';
 import Paper from './Paper';
-export default function Reader({ project, urls, articleId, onCloseArticle, onBack, onPrint, onMessage, onOpenArticle, scrollPosition }: {
+import { routeHash } from '../routes';
+export default function Reader({ project, urls, articleId, pageId, onOpenPage, onCloseArticle, onBack, onPrint, onMessage, onOpenArticle, scrollPosition }: {
     project: Project;
     urls: Record<string, string>;
     articleId?: string;
+    pageId?: string;
+    onOpenPage: (id: string) => void;
     onCloseArticle: () => void;
     onBack: () => void;
     onPrint: () => void;
@@ -31,13 +34,15 @@ export default function Reader({ project, urls, articleId, onCloseArticle, onBac
         return () => { window.removeEventListener('resize', resize); window.removeEventListener('scroll', scroll); };
     }, [scrollPosition]);
     useEffect(() => { if (!articleId) requestAnimationFrame(() => window.scrollTo(0, returnScroll.current)); }, [articleId]);
+    useEffect(() => { if (!pageId) return; const frame = requestAnimationFrame(() => document.getElementById('okuma-sayfa-' + pageId)?.scrollIntoView()); return () => cancelAnimationFrame(frame); }, [pageId]);
+    const articleHref = (id: string) => routeHash({ kind: 'read', projectId: project.id, articleId: id });
     function open(id: string) { returnScroll.current = window.scrollY; onOpenArticle(id); }
     const articleClick = (event: React.MouseEvent<HTMLAnchorElement>, id: string) => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); open(id); } };
     const scale = width / 1000;
     return <div className="reader"><header className="reader-header"><button onClick={onBack}><ArrowLeft size={17}/> Editöre dön</button><div><span className="eyebrow">OKUMA ÖNİZLEMESİ</span><strong>{project.name}</strong></div><button className="primary" onClick={onPrint}>PDF / Yazdır</button></header><main>
-    <div className="reader-intro"><p className="eyebrow">BİR SAYI, BİRÇOK HİKÂYE</p><h1>Yayına başka bir gözle bakın.</h1><p>Sayfalardaki bağlantılı başlıklara dokunarak haberin tamamını okuyabilirsiniz.</p><nav aria-label="Okuma sayfaları">{project.pages.map((p, i) => <a key={p.id} href={'#okuma-sayfa-' + p.id}>{String(i + 1).padStart(2, '0')} · {p.name}</a>)}</nav></div>
-    {project.pages.map((page, i) => <section className="reader-page" key={page.id} id={'okuma-sayfa-' + page.id} aria-label={page.name}><div className="reader-page-label"><span>{String(i + 1).padStart(2, '0')} / {project.pages.length}</span><span>{page.name}</span></div><Paper project={project} page={page} urls={urls} scale={scale} onOpenArticle={open}/></section>)}
-    {project.articles.length > 0 && <section className="article-index"><span className="eyebrow">YAZILAR</span><h2>Bütün hikâyeler</h2>{project.articles.map(a => <a href={'#haber/' + encodeURIComponent(a.id)} onClick={event => articleClick(event, a.id)} key={a.id}><small>{a.section}</small><h3>{a.title}</h3><p>{a.summary}</p><span>Haberi oku ↗</span></a>)}</section>}
+    <div className="reader-intro"><p className="eyebrow">BİR SAYI, BİRÇOK HİKÂYE</p><h1>Yayına başka bir gözle bakın.</h1><p>Sayfalardaki bağlantılı başlıklara dokunarak haberin tamamını okuyabilirsiniz.</p><nav aria-label="Okuma sayfaları">{project.pages.map((p, i) => <a key={p.id} href={routeHash({ kind: 'read', projectId: project.id, pageId: p.id })} onClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && event.button === 0) { event.preventDefault(); onOpenPage(p.id); } }}>{String(i + 1).padStart(2, '0')} · {p.name}</a>)}</nav></div>
+    {project.pages.map((page, i) => <section className="reader-page" key={page.id} id={'okuma-sayfa-' + page.id} aria-label={page.name}><div className="reader-page-label"><span>{String(i + 1).padStart(2, '0')} / {project.pages.length}</span><span>{page.name}</span></div><Paper project={project} page={page} urls={urls} scale={scale} onOpenArticle={open} articleHref={articleHref}/></section>)}
+    {project.articles.length > 0 && <section className="article-index"><span className="eyebrow">YAZILAR</span><h2>Bütün hikâyeler</h2>{project.articles.map(a => <a href={articleHref(a.id)} onClick={event => articleClick(event, a.id)} key={a.id}><small>{a.section}</small><h3>{a.title}</h3><p>{a.summary}</p><span>Haberi oku ↗</span></a>)}</section>}
     {project.pages.flatMap(p => p.elements.filter(e => e.kind === 'image' && !e.hidden && e.caption).map(e => <p className="reader-caption" key={e.id}>{e.caption}</p>))}
     </main><dialog ref={dialog} className="article-dialog" aria-labelledby="article-title" onCancel={event => { event.preventDefault(); onCloseArticle(); }} onClick={event => { if (event.target === event.currentTarget) {
         const r = event.currentTarget.getBoundingClientRect();

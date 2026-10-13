@@ -1,5 +1,15 @@
 # İlk kilometre taşı doğrulaması
 
+## Gazete kapsamlı bağlantılar ve hata sonrası devam — 13 Ekim 2026
+
+- `npm run build` başarılı. `npm test` 15/15; `npm run test:tool` 6/6; tam `npm run test:e2e` 25/25 geçti (yaklaşık 1.2 dakika). Önceki HTML/ZIP, bağımsız skill, medya izolasyonu, migration, okuma, pan/zoom, sarma ve A3/A4 PDF kontrolleri de geçti.
+- Yeni rota testleri aynı articleId'li iki gazete arasında doğru proje bağlantısı, son aktif gazeteden bağımsız açılış, okuma/sayfa yenileme, ileri/geri ve kayıt beklenmeden canlı proje geçişini kapsar. Eski tek eşleşen haber linki taşınır; belirsiz veya olmayan proje başka gazeteyi açmaz. Editör açıkken hatalı bağlantı taslağı korur ve uyarı gösterir; ilk açılışta Çalışmalar'da hata gösterilir.
+- Geçersiz HTML'den sonra doğru dosya yeniden dene gerektirmeden eklenir. Dosya doğrulama hatası geçici/kayıtsız çalışma gibi gösterilmez.
+- Kota hatası kontrollü olarak medya yazısına enjekte edildi: güncel Blob yedeği doğrulandı, önceki kalıcı projeye medya yazılmadı. Başarısız export çıkış onayını açmadı; dosya indirme + kullanıcı onayı olmadan çıkış kapalıydı. Yedekten sonra model değişince yeni yedek gerekti. İptalde taslak/görsel açık kaldı; onaylı çıkışta önceki yerel kayıt korunarak Çalışmalar'a dönüldü. Tamamen erişilemeyen IndexedDB ile geçici oturumun yedekli çıkışı da geçti.
+- `artifacts/save-recovery.png` ve `scoped-reader.png` görsel olarak incelendi. Kullanıcının açık Atölyesinde gerçek gazete/yazı kimliği taşıyan haber linki açıldı ve editöre dönüldü; yazı/geometri değiştirilmedi. Bu turda yeni bir PDF elle render edilmedi; mevcut otomatik PDF senaryoları tekrar geçti.
+
+R01/R02/R04 kapandı; R03 ve diğer inceleme maddeleri ayrı sonraki çalışmadır. Yerel bağlantılar başka cihaz/ERP yayını sağlamaz. İndirme API'si dosyanın diskteki varlığını kanıtlamaz; bu nedenle kurtarma akışında kullanıcının açık dosya kaydetme onayı bulunur.
+
 ## Metin düzenleme, yeniden açma ve PDF — 13 Ekim 2026
 
 Kullanıcının son gazetesinden HTML yedeği alınarak ayrı test çalışması oluşturuldu; özgün çalışma değiştirilmedi. Başlık ve spot güncellendi, tam yazıya 3271 karakterlik Türkçe örnek metin eklendi. Başlık kutusunun geometrisi önce/sonra eşleşti. Uzun yazı native dialog içinde son paragraf dahil eksiksiz açıldı.
