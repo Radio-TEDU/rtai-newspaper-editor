@@ -1,0 +1,99 @@
+<!doctype html>
+<!-- Yalnızca yerel önizleme: Hub'ın görünümünü ve tema düğmesini taklit eder, editörü sitedeki gibi iframe ile gömer. Derlemeye dahil değildir. -->
+<html lang="tr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RadioTEDU Hub · Önizleme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700;800&display=swap"/>
+<script>
+  // Hub'daki ilk yükleme betiğinin aynısı
+  (function () {
+    try {
+      const saved = localStorage.getItem('radiotedu_theme') || localStorage.getItem('theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const dark = saved === 'dark' || (!saved && systemDark);
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root{--brand:#E31E26;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--line-strong:#cbd5e1;--bg:#f8fafc;--soft:#f1f5f9;--panel:#ffffff}
+  html.dark,html[data-theme="dark"]{--ink:#f8fafc;--muted:#94a3b8;--line:#1e293b;--line-strong:#334155;--bg:#090d16;--soft:#131b2e;--panel:#101624}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Albert Sans',Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex;height:100vh;overflow:hidden}
+  aside{width:276px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);padding:18px 10px;overflow:auto}
+  .logo{display:flex;align-items:center;justify-content:space-between;padding:4px 10px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .logo b{font-size:22px;font-weight:800;letter-spacing:-.04em}.logo b span{color:var(--brand)}
+  .hub{background:var(--brand);color:#fff;font-size:10px;font-weight:800;padding:2px 9px;border-radius:9px}
+  .sec{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--muted);padding:14px 10px 8px}
+  .item{display:flex;gap:12px;align-items:center;padding:11px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:default}
+  .item:hover{background:var(--soft)}
+  .item.active{background:var(--brand);color:#fff}
+  main{flex:1;display:flex;flex-direction:column;padding:0 36px 24px;min-width:0}
+  .top{display:flex;justify-content:flex-end;align-items:center;gap:10px;height:56px;border-bottom:1px solid var(--line)}
+  .theme-toggle-btn{width:40px;height:40px;border-radius:20px;border:1px solid var(--line-strong);background:var(--panel);font-size:18px;cursor:pointer}
+  .note{font-size:11px;color:var(--muted);margin-right:auto}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;padding:24px 0 18px}
+  h1{margin:0 0 8px;font-size:30px;font-weight:800}
+  .head p{margin:0;max-width:780px;font-size:15px;line-height:1.6}
+  .head a{color:var(--ink);text-decoration:none;font-size:15px;white-space:nowrap}
+  iframe{flex:1;width:100%;border:1px solid var(--line);background:var(--panel)}
+  /* Kaydırma çubukları: erp-entegrasyon/gazete-atolyesi.user.js'in gerçek Hub'a eklediği tasarımın aynısı */
+  html{--rtai-scroll-thumb:#cbd5e1;--rtai-scroll-thumb-hover:#64748b}
+  html[data-theme=dark]{--rtai-scroll-thumb:#2a3851;--rtai-scroll-thumb-hover:#475569}
+  @supports selector(::-webkit-scrollbar){
+    *{scrollbar-width:auto!important;scrollbar-color:auto!important}
+    ::-webkit-scrollbar{width:10px!important;height:10px!important}
+    ::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent!important}
+    ::-webkit-scrollbar-thumb{background:var(--rtai-scroll-thumb)!important;border-radius:10px!important;border:2px solid transparent!important;background-clip:padding-box!important}
+    ::-webkit-scrollbar-thumb:hover{background-color:var(--rtai-scroll-thumb-hover)!important}
+    ::-webkit-scrollbar-thumb:active{background-color:#E31E26!important}
+    ::-webkit-scrollbar-button{display:none!important;width:0!important;height:0!important}
+  }
+  @supports not selector(::-webkit-scrollbar){
+    *{scrollbar-width:thin;scrollbar-color:var(--rtai-scroll-thumb) transparent}
+  }
+</style></head>
+<body>
+<aside>
+  <div class="logo"><b>RADIOTEDU<span>))</span></b><span class="hub">HUB</span></div>
+  <div class="sec">OPERASYON</div>
+  <div class="item">📊 Panel</div><div class="item">✓ Görevler</div><div class="item">📅 Takvim</div>
+  <div class="item active">📰 Gazete Atölyesi</div>
+  <div class="item">🤝 Toplantılar</div><div class="item">📻 Radyo Saatleri</div>
+  <div class="sec">STÜDYO &amp; KAYNAKLAR</div>
+  <div class="item">🎙️ Stüdyo Rezervasyon</div><div class="item">🎧 Ekipman</div><div class="item">▦ Oda QR</div>
+  <div class="sec">EKİP &amp; TOPLULUK</div>
+  <div class="item">👥 Bilgilerim</div>
+  <div class="sec">TİCARİ &amp; HİZMET</div>
+  <div class="item">🎯 Etkinlik Kontrol</div><div class="item">🎫 Kapı Kontrol</div><div class="item">⛺ Stant Onay</div><div class="item">⭐ Avantajlar</div>
+</aside>
+<main>
+  <div class="top">
+    <span class="note">Yerel önizleme · Hub'ın tema düğmesi taklit ediliyor</span>
+    <button class="theme-toggle-btn" type="button" onclick="toggleTheme()"><span id="rt-theme-icon">🌙</span></button>
+  </div>
+  <div class="head">
+    <div><h1>Gazete Atölyesi</h1>
+      <p>Çalışmalar bu hesap için bu tarayıcıda saklanır. Başka cihazda devam etmek için HTML veya proje paketini indirip aktarın.</p></div>
+    <a href="./#calismalar" target="_blank">Tam ekranda aç ↗</a>
+  </div>
+  <iframe src="./#calismalar" title="Gazete Atölyesi"></iframe>
+</main>
+<script>
+  // Hub'daki toggleTheme ile aynı davranış
+  function updateThemeIcon() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.getElementById('rt-theme-icon').textContent = isDark ? '☀️' : '🌙';
+  }
+  window.toggleTheme = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.classList.toggle('dark', !isDark);
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('radiotedu_theme', next); localStorage.setItem('theme', next); } catch (_) {}
+    updateThemeIcon();
+  };
+  updateThemeIcon();
+</script>
+</body></html>

@@ -1,0 +1,30 @@
+{
+  "name": "Haftalık · Yerel üretim örneği",
+  "masthead": "Haftalık",
+  "tagline": "KAMPÜSTEN ŞEHRE · BİRLİKTE ÜRETİYORUZ",
+  "edition": "Örnek sayı · Düzenlenebilir taslak",
+  "widthMm": 297,
+  "heightMm": 420,
+  "articles": [
+    {
+      "id": "kampus-atolye",
+      "title": "Birlikte ürettiğimiz yeni bir gelecek",
+      "summary": "Bir gazete, hikâyelerimizi bir araya getirmek için ortak bir alan açar.",
+      "body": "Bu içerik, terminalden oluşturulan gazetenin editörde nasıl açılacağını göstermek için hazırlanmış örnek bir yazıdır. Gerçek bir haber veya etkinlik duyurusu değildir.\n\nPaketi editörde açın. Başlığı seçerek metni değiştirin, görseli taşıyın veya yeni bir fotoğraf yükleyin. Haber ayrıntısı sayfa kutularından bağımsız saklanır.\n\nSon düzenlemelerinizi yeni bir proje paketi olarak dışa aktarabilirsiniz.",
+      "section": "Kampüs",
+      "url": ""
+    },
+    {
+      "id": "kent-fikirleri",
+      "title": "Şehrin hikâyesini birlikte yazmak",
+      "summary": "İkinci sayfa; başlık, spot ve gövde öğeleriyle ayrı bir düzenleme alanıdır.",
+      "body": "Bu ikinci örnek yazı, çok sayfalı proje paketinin sayfa sırasını ve içerik bağlantılarını incelemek için kullanılır.\n\nOkuma önizlemesinde başlığa tıklayarak bu metni açabilirsiniz. Kaynak bağlantısı boş olsa bile taslak yazı okunabilir.\n\nYeni bir haber ekleyin, yerleşimi düzenleyin ve sayının tamamını PDF olarak alın.",
+      "section": "Kent & yaşam",
+      "url": ""
+    }
+  ],
+  "pages": [
+    { "name": "Ön sayfa", "type": "cover", "articleIds": ["kampus-atolye", "kent-fikirleri"] },
+    { "name": "Kent & yaşam", "type": "news", "articleIds": ["kent-fikirleri"] }
+  ]
+}

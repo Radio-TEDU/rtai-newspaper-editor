@@ -1,0 +1,24 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+const execute = promisify(execFile);
+test('copied skill works without editor or node_modules and preserves HTML revisions', async () => {
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'rtai-independent-'));
+    await fs.cp('skills/rtai-newspaper', path.join(directory, 'rtai-newspaper'), { recursive: true });
+    const script = path.join(directory, 'rtai-newspaper/scripts/newspaper.mjs');
+    const run = (...args) => execute(process.execPath, [script, ...args], { cwd: directory });
+    await run('demo', '--output', 'sample.html'); await run('check', '--input', 'sample.html');
+    await run('unpack', '--input', 'sample.html', '--output', 'edit');
+    const project = JSON.parse(await fs.readFile(path.join(directory, 'edit/project.json'), 'utf8'));
+    const element = project.pages[0].elements.find(e => e.kind === 'headline'); element.text = 'Independent revision';
+    await fs.writeFile(path.join(directory, 'edit/project.json'), JSON.stringify(project));
+    await run('pack', '--input', 'edit/project.json', '--assets', 'edit/assets.json', '--output', 'revised.html');
+    await run('unpack', '--input', 'revised.html', '--output', 'reopened');
+    assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory, 'reopened/project.json'), 'utf8')), project);
+    await assert.rejects(run('demo', '--output', 'revised.html'));
+    assert.equal((await fs.readFile(path.join(directory, 'revised.html'), 'utf8')).includes('Independent revision'), true);
+});
