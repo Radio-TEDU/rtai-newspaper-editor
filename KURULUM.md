@@ -121,3 +121,4 @@ Hub'daki CSS değişkenlerinin aynısı kullanılır (`src/hub-theme.css` başı
 | Çizgi (`--rt-line`) | `#e2e8f0` | `#1e293b` |
 
 Hub renkleri değişirse yalnızca bu tablodaki değişkenleri güncellemek yeterlidir.
+değişiklik.
