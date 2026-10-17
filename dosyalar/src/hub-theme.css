@@ -1,0 +1,138 @@
+/*
+ * RadioTEDU Hub teması.
+ * Renkler radiotedu.com/erp'deki :root ve html[data-theme="dark"] değişkenleriyle aynıdır.
+ * Yalnızca editörün arayüzü temalanır; gazete sayfasının kendisi (.paper, .mini-paper,
+ * görsel yer tutucuları, baskı çıktısı) her iki modda da aynı kalır.
+ * Tema seçimi src/hub-theme.ts tarafından <html data-theme> üzerine yazılır.
+ */
+:root{
+  --rt-brand:#E31E26;--rt-brand-strong:#c5181e;--rt-brand-soft:rgba(227,30,38,.08);--rt-brand-line:rgba(227,30,38,.35);
+  --rt-ink:#0f172a;--rt-muted:#64748b;--rt-line:#e2e8f0;--rt-line-strong:#cbd5e1;
+  --rt-bg:#f8fafc;--rt-soft:#f1f5f9;--rt-panel:#ffffff;--rt-canvas:#eef1f5;--rt-dot:#94a3b866;
+  --rt-shadow:0 1px 3px rgba(15,23,42,.05),0 1px 2px rgba(15,23,42,.03);--rt-shadow-soft:0 2px 8px rgba(15,23,42,.06);
+  --rt-paper-shadow:0 5px 22px rgba(15,23,42,.12);
+  --rt-danger:#c5181e;--rt-warn-bg:#fff7ed;--rt-warn-line:#fed7aa;--rt-warn-ink:#9a3412;
+  --green:var(--rt-brand);--border:var(--rt-line);--muted:var(--rt-muted);
+  color-scheme:light;
+  font-family:'Albert Sans',Arial,Helvetica,sans-serif;color:var(--rt-ink);background:var(--rt-bg);
+}
+:root[data-theme=dark]{
+  --rt-brand:#E31E26;--rt-brand-strong:#ff333c;--rt-brand-soft:rgba(227,30,38,.16);--rt-brand-line:rgba(255,51,60,.45);
+  --rt-ink:#f8fafc;--rt-muted:#94a3b8;--rt-line:#1e293b;--rt-line-strong:#334155;
+  --rt-bg:#090d16;--rt-soft:#131b2e;--rt-panel:#101624;--rt-canvas:#0c111d;--rt-dot:#33415580;
+  --rt-shadow:0 1px 3px rgba(0,0,0,.45);--rt-shadow-soft:0 2px 8px rgba(0,0,0,.35);
+  --rt-paper-shadow:0 6px 28px rgba(0,0,0,.55);
+  --rt-danger:#ef4444;--rt-warn-bg:#2a1d0f;--rt-warn-line:#7c4a15;--rt-warn-ink:#fdba74;
+  color-scheme:dark;
+}
+body{background:var(--rt-bg)}
+/* Tema değişirken eski ve yeni görünüm arasında yumuşak geçiş (hub-theme.ts → startViewTransition) */
+::view-transition-old(root),::view-transition-new(root){animation-duration:.3s;animation-timing-function:ease}
+
+/* Kaydırma çubukları: işletim sisteminin gri çubuğu yerine temanın renkleri */
+:root{--rt-scroll-thumb:var(--rt-line-strong);--rt-scroll-thumb-hover:var(--rt-muted)}
+:root[data-theme=dark]{--rt-scroll-thumb:#2a3851;--rt-scroll-thumb-hover:#475569}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--rt-scroll-thumb);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:var(--rt-scroll-thumb-hover)}
+::-webkit-scrollbar-thumb:active{background-color:var(--rt-brand)}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:var(--rt-scroll-thumb) transparent}}
+
+/* Temel kontroller */
+button{border-color:var(--rt-line);background:var(--rt-panel);color:var(--rt-ink)}
+button:hover:not(:disabled){background:var(--rt-soft);border-color:var(--rt-line-strong)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline-color:var(--rt-brand)}
+.primary,.workspace-home .primary{background:var(--rt-brand);color:#fff;border-color:var(--rt-brand)}
+.primary:hover:not(:disabled),.workspace-home .primary:hover:not(:disabled){background:var(--rt-brand-strong);border-color:var(--rt-brand-strong);color:#fff}
+.text-button{color:var(--rt-muted)}
+.danger,.workspace-home .danger{color:var(--rt-danger)}
+a{color:var(--rt-brand)}
+input,textarea,select{border-color:var(--rt-line);background:var(--rt-panel);color:var(--rt-ink)}
+input::placeholder,textarea::placeholder{color:var(--rt-muted)}
+.eyebrow{color:var(--rt-muted)}
+
+/* Editör üst çubuğu */
+.app-header{background:var(--rt-panel)}
+.brand{color:var(--rt-ink)}
+.brand-symbol{background:var(--rt-brand);color:#fff}
+.brand strong span{color:var(--rt-line-strong)}
+.wheel-setting{display:flex;align-items:center;gap:3px;margin-left:7px;font-size:10px}
+.brand small,.save-state,.wheel-setting,.canvas-page-name,.snap-option,.canvas-label{color:var(--rt-muted)}
+.save-state.error,.save-state.disabled{color:var(--rt-danger)}
+.project-title input{color:var(--rt-ink)}
+
+/* Yan paneller */
+.left-panel,.right-panel{background:var(--rt-panel);color:var(--rt-ink)}
+.section-title h2 span,.page-item-text b,.page-item-text small,.project-section>button,.project-section p,.left-footer,.field>span,.field small,.helper,.empty-selection,.empty-selection>span,.right-footer,.layer-select>span:first-child,.panel-tabs button{color:var(--rt-muted)}
+.page-item.active,.layer-row.active{background:var(--rt-brand-soft);border-color:var(--rt-brand-line)}
+.element-tools button{border-color:var(--rt-line);background:var(--rt-panel)}
+.element-tools button svg{color:var(--rt-brand)}
+.element-tools .image-add{background:var(--rt-soft);border-color:var(--rt-line)}
+.status-dot{background:#22c55e}
+.panel-tabs button[aria-selected=true]{color:var(--rt-brand)}
+.panel-tabs button[aria-selected=true]:after{background:var(--rt-brand)}
+.panel-heading h2{color:var(--rt-ink);font-family:'Albert Sans',Arial,sans-serif;font-weight:700}
+.selection-dot{background:var(--rt-brand)}
+.compact button{border-color:var(--rt-line)}
+.mini-paper{border-color:var(--rt-line-strong)}
+
+/* Tuval alanı (gazete sayfasının etrafı) */
+.canvas-region{background:var(--rt-canvas)}
+.canvas-toolbar,.canvas-footer{background:var(--rt-soft);border-color:var(--rt-line)}
+.canvas-footer,.canvas-toolbar .button-row>button,.zoom-controls button{color:var(--rt-muted)}
+.canvas-toolbar .button-row>button.toggled{background:var(--rt-brand-soft);color:var(--rt-brand)}
+.toolbar-divider{background:var(--rt-line-strong)}
+.workspace{background-image:radial-gradient(var(--rt-dot) .65px,transparent .65px)}
+.paper{box-shadow:var(--rt-paper-shadow)}
+.zoom-controls button[aria-pressed=true]{background:var(--rt-brand-soft);border-color:var(--rt-brand)}
+.editable .design-element.selected,.design-element:focus-visible{outline-color:var(--rt-brand)}
+.editable .design-element:hover{outline-color:var(--rt-brand-line)}
+.resize-handle{border-color:var(--rt-brand)}
+
+/* Bildirimler ve uyarılar */
+.notice{background:var(--rt-panel);color:var(--rt-ink);border-color:var(--rt-line-strong);box-shadow:var(--rt-shadow-soft);border-left:4px solid var(--rt-brand)}
+.notice button{color:var(--rt-ink)}
+.busy-label{background:var(--rt-panel);color:var(--rt-ink);border:1px solid var(--rt-line);box-shadow:var(--rt-shadow-soft)}
+.save-recovery-banner{background:var(--rt-warn-bg);border-color:var(--rt-warn-line);color:var(--rt-ink)}
+.boot{background:var(--rt-bg);color:var(--rt-ink)}
+.boot h1{font-family:'Albert Sans',Arial,sans-serif;font-weight:800}
+
+/* Okuyucu görünümü */
+.reader{background:var(--rt-canvas);color:var(--rt-ink)}
+.reader-header{background:var(--rt-panel);border-color:var(--rt-line)}
+.reader-intro p:not(.eyebrow),.reader-page-label,.article-index p,.reader-caption,.article-summary{color:var(--rt-muted)}
+.reader-intro nav a{border-color:var(--rt-line);background:var(--rt-panel)}
+.article-index>a{border-color:var(--rt-line-strong);color:var(--rt-ink)}
+.article-index small{color:var(--rt-brand)}
+.article-hotspot>span{background:var(--rt-brand)}
+.article-dialog{background:var(--rt-panel);color:var(--rt-ink)}
+.article-summary,.article-actions{border-color:var(--rt-line)}
+.article-dialog::backdrop{background:rgba(9,13,22,.7)}
+
+/* Çalışmalar (ana sayfa) */
+.workspace-home{background:var(--rt-bg);color:var(--rt-ink)}
+.home-header{background:var(--rt-panel);border-color:var(--rt-line)}
+.home-brand{color:var(--rt-ink)}
+.home-brand strong{font-family:'Albert Sans',Arial,sans-serif;font-weight:800;letter-spacing:-.02em}
+.home-brand svg{color:var(--rt-brand)}
+.local-badge{background:var(--rt-brand-soft);color:var(--rt-brand)}
+.home-intro h1{font-family:'Albert Sans',Arial,sans-serif;font-weight:800;letter-spacing:-.02em}
+.home-intro>p,.works-heading h2 span,.work-card p,.work-card small,.empty-workspace,.home-footer{color:var(--rt-muted)}
+.workspace-home button,.file-button{border-color:var(--rt-line);background:var(--rt-panel);color:var(--rt-ink)}
+.workspace-home button:hover:not(:disabled),.file-button:hover{background:var(--rt-soft);border-color:var(--rt-line-strong)}
+.file-button:focus-within{outline-color:var(--rt-brand)}
+.works-search{border-color:var(--rt-line);background:var(--rt-panel);color:var(--rt-muted)}
+.works-search input{background:transparent}
+.work-card{background:var(--rt-panel);border-color:var(--rt-line);box-shadow:var(--rt-shadow)}
+.work-card h2{font-family:'Albert Sans',Arial,sans-serif;font-weight:700}
+.work-preview{background:var(--rt-canvas)}
+.empty-workspace{border-color:var(--rt-line-strong)}
+.empty-workspace svg{color:var(--rt-brand)}
+.empty-workspace h2{color:var(--rt-ink);font-family:'Albert Sans',Arial,sans-serif;font-weight:700}
+.home-error{background:var(--rt-warn-bg);border-color:var(--rt-warn-line);color:var(--rt-ink)}
+.issue-name-input:focus{outline-color:var(--rt-brand)}
+
+/* Baskıda tema yok: çıktı her zaman beyaz kâğıt */
+@media print{:root,:root[data-theme=dark]{color-scheme:light;background:#fff}}
